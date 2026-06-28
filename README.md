@@ -1,7 +1,7 @@
-# Costa Verde Aïkido — app membres
+# Kanjo Aïkido Isulanu — app membres
 
 PWA installable (Android / iOS / desktop) pour les adhérents du club
-[Costa Verde Aïkido](https://costaverdeaikido.fr) à Santa Maria Poggio.
+**Kanjo Aïkido Isulanu** à Vescovato (Corse).
 
 Onglets : **Planning** (filtrable par lieu et par jour), **Annonces**
 (messages descendants + appel), **Club** (histoire, dojo, tarifs, liens),
@@ -9,7 +9,7 @@ Onglets : **Planning** (filtrable par lieu et par jour), **Annonces**
 
 ## Stack
 
-- **Vite 5** + **React 18** + **Tailwind 3** (palette custom : ink / vermillion / sand)
+- **Vite 5** + **React 18** + **Tailwind 3** (palette custom noir & or : paper / ink / pine / gold ; polices Cinzel / Cormorant Garamond / Space Grotesk)
 - **vite-plugin-pwa** + **Workbox** — manifest, service worker, icônes générées depuis le logo
 - **Firebase** — Firestore (planning, annonces, appel), Auth, Hosting, Cloud Messaging
 - **lucide-react** pour les icônes
@@ -30,7 +30,7 @@ publier une annonce ne fait que mettre à jour l'état local.
 ## Configuration Firebase
 
 1. Crée le projet sur [Firebase Console](https://console.firebase.google.com)
-   (recommandé : `costa-verde-aikido`).
+   (recommandé : `kanjo-aikido`).
 2. Active Firestore (mode production), Authentication (Email/Password +
    Google), Hosting, Cloud Messaging.
 3. Récupère la config Web (Project settings → Your apps → Web).
