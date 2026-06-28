@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The app does not (yet) use Firebase Auth for adhérents — prof access
+    // is gated client-side by a PIN code (see src/auth/profGate.js). These
+    // rules therefore allow public read on club content and unauthenticated
+    // writes on the collections the app actually touches. Threat model:
+    // casual misuse by a member, not a determined attacker. To harden, move
+    // to Firebase Auth + role check on /members/{uid}.role.
+
+    // Schedule.
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Announcements (info + roll-call).
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+
+      // Roll-call responses, one doc per responder.
+      match /responses/{responderId} {
+        allow read: if true;
+        // Create / update : on n'accepte que les deux états valides.
+        allow create, update: if request.resource.data.response in ['present', 'absent'];
+        // Delete : l'adhérent peut retirer son vote (re-tap sur sa
+        // réponse). Pas de request.resource.data dispo en delete.
+        allow delete: if true;
+      }
+    }
+
+    // FCM device tokens (doc id === token). Clients register/refresh their
+    // own token; nobody needs to read the collection from the client (only
+    // the Cloud Function does, via the Admin SDK, which bypasses rules).
+    match /pushTokens/{token} {
+      allow read: if false;
+      allow create, update: if true;
+      allow delete: if true;
+    }
+
+    // Attendance sessions — one doc per "appel" (pointage) the prof does
+    // at the dojo. Open read so the dashboard KPIs (présents cette
+    // semaine, taux, top 5, absents depuis…) can subscribe; open write
+    // gated client-side by prof mode.
+    match /attendance/{sessionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Stages — un doc par stage (au dojo ou ailleurs) avec la liste des
+    // participants. Sert au compteur "stages cette saison" du Dashboard
+    // membre et aux badges (premier stage national, etc.). Même tier de
+    // sécurité que /attendance.
+    match /stages/{stageId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Member profiles — keyed by FFAB licence number. Read open so a
+    // signed-in adhérent can fetch their own card; write open and gated
+    // client-side (members can self-onboard with their own licence, profs
+    // in prof mode reassign grades). Same trade-off as the announcements
+    // collection: friction-tier security for a small club.
+    match /members/{licenseNum} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

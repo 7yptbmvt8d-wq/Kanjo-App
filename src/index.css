@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    /* App-shell scroll model: the body never scrolls, only the inner
+       content area does. Prevents iOS rubber-band on the chrome and
+       keeps the header/bottom-nav anchored. */
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply font-sans antialiased text-ink bg-paper;
+    font-feature-settings: "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hairlines */
+  .hairline {
+    background-color: rgba(34, 30, 24, 0.09);
+  }
+  .hairline-card {
+    background-color: rgba(34, 30, 24, 0.07);
+  }
+  .hairline-gold {
+    background-color: rgba(169, 129, 70, 0.55);
+  }
+
+  /* Vertical kanji column — used as decorative element in screen headers. */
+  .kanji-column {
+    writing-mode: vertical-rl;
+    letter-spacing: 0.1em;
+    font-family: theme(fontFamily.serif);
+  }
+
+  /* Watermark — single big kanji bleeding off-corner of dark hero. */
+  .kanji-watermark {
+    font-family: theme(fontFamily.serif);
+    line-height: 0.85;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  /* Lettrine for editorial intro paragraphs. */
+  .lettrine::first-letter {
+    font-family: theme(fontFamily.serif);
+    float: left;
+    font-size: 54px;
+    line-height: 0.78;
+    font-weight: 600;
+    color: theme(colors.pine.DEFAULT);
+    padding: 6px 10px 0 0;
+  }
+}

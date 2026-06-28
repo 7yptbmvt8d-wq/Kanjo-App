@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Affiches de stage — l'objet est nommé stages/<stageId>/<filename>.
+    // Read public (l'affiche s'affiche dans toutes les apps), write ouvert
+    // gated client-side par le mode prof, comme les autres collections.
+    // Plafond 5 Mo + type image pour éviter les uploads abusifs.
+    match /stages/{stageId}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource == null
+        || (request.resource.size < 5 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'));
+    }
+  }
+}
