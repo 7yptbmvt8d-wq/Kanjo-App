@@ -1,5 +1,5 @@
 {
-  "name": "costa-verde-aikido",
+  "name": "kanjo-aikido-isulanu",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "extract-logos": "node scripts/extract-logo.js",
-    "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/branding/logo-costa-verde.jpg"
+    "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/branding/logo-kanjo.png"
   },
   "dependencies": {
     "firebase": "^11.0.2",

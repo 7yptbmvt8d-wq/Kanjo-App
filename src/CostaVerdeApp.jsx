@@ -253,7 +253,7 @@ function isSameLocalDay(msA, msB) {
 
 // Audience d'un cours : déduit du titre, pour filtrer la liste de pointage.
 // "all" = tout adhérent · "adultes" = ≥ ADULT_AGE_THRESHOLD · "enfants" = < seuil.
-// Les cours Vescovato (self-défense, séniors, ados) sont rangés en
+// Les cours adultes (armes, self-défense, séniors, ados) sont rangés en
 // "adultes" : tous nos enfants (< 13 ans) sont en dehors du public visé.
 function courseAudience(course) {
   const t = (course?.title || "").toLocaleLowerCase("fr");
@@ -261,6 +261,8 @@ function courseAudience(course) {
     t.includes("aïkitaïso") || t.includes("aikitaiso") ||
     t.includes("adulte") ||
     t.includes("ados") ||
+    t.includes("arme") ||
+    t.includes("bokken") ||
     t.includes("self-défense") || t.includes("self defense") ||
     t.includes("sénior") || t.includes("senior")
   ) return "adultes";
@@ -323,14 +325,14 @@ function relativePastLabel(ts) {
   return new Date(ms).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-const LOGO_COSTA_VERDE = "/branding/logo-costa-verde.jpg";
+const LOGO_COSTA_VERDE = "/branding/logo-kanjo.png";
 
-// Timeline jalons — à compléter / corriger avec Sébastien.
+// Timeline jalons — à compléter / corriger avec l'enseignant.
 const MILESTONES = [
   {
-    year: "2004",
-    t: "Fondation du club",
-    d: "Jean-Charles Lanusse (Yondan) ouvre les premiers tatamis à la Maison du Temps de Santa Maria Poggio.",
+    year: "2009",
+    t: "L'esprit « Kanjo »",
+    d: "Tamura Senseï choisit le nom « Kanjo » (感情) : tendre la main à l'autre pour avancer ensemble.",
   },
   {
     year: "Depuis",
@@ -338,9 +340,9 @@ const MILESTONES = [
     d: "Le club est reconnu par la Fédération Française d'Aïkido et de Budo et par l'Aïkikaï de Tokyo.",
   },
   {
-    year: "2025–26",
-    t: "Antenne Vescovato",
-    d: "Projet d'extension à Vescovato avec des créneaux ados, self-défense et séniors débutants — à valider.",
+    year: "Vescovato",
+    t: "Le dojo en Corse",
+    d: "Le Kanjo Aïkido Isulanu fait vivre cet esprit sur les tatamis de Vescovato — ouvert à tous, sans compétition.",
   },
 ];
 
@@ -365,12 +367,12 @@ function Seal({ children, tone = "ink" }) {
 function Mark() {
   return (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="19" fill="none" stroke="#1c1917" strokeWidth="1.5" />
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#c9a24d" strokeWidth="1.5" />
       <path
         d="M20 4 A16 16 0 1 0 20 36 A11 11 0 1 1 20 4"
-        fill="#1c1917"
+        fill="#c9a24d"
       />
-      <circle cx="26" cy="13" r="3.2" fill="#dc2626" />
+      <circle cx="26" cy="13" r="3.2" fill="#e2c488" />
     </svg>
   );
 }
@@ -382,8 +384,8 @@ function Enso({ className = "" }) {
     <svg viewBox="0 0 100 100" className={className} aria-hidden>
       <defs>
         <linearGradient id="ensoStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1c1917" stopOpacity="0.85" />
-          <stop offset="100%" stopColor="#1c1917" stopOpacity="0.35" />
+          <stop offset="0%" stopColor="#c9a24d" stopOpacity="0.85" />
+          <stop offset="100%" stopColor="#c9a24d" stopOpacity="0.35" />
         </linearGradient>
       </defs>
       <path
@@ -452,7 +454,7 @@ function CourseCard({ c, profMode, onProfChange }) {
           </div>
         )}
         <div className="flex items-center gap-2 mt-3">
-          <div className="w-[26px] h-[26px] rounded-full bg-pine text-paper text-[9.5px] font-extrabold flex items-center justify-center shrink-0">
+          <div className="w-[26px] h-[26px] rounded-full bg-pine text-cream text-[9.5px] font-extrabold flex items-center justify-center shrink-0">
             {initials}
           </div>
           {profMode ? (
@@ -507,7 +509,7 @@ function PresenceCard({ a, response, aggregate, allMembers, onRespond, profMode,
       a.pinned ? "border-gold/55 shadow-pinned" : "border-[rgba(34,30,24,0.07)]"
     }`}>
       <div className="flex items-center gap-2.5">
-        <div className="w-[30px] h-[30px] rounded-full bg-pine text-paper text-[10px] font-extrabold flex items-center justify-center shrink-0">
+        <div className="w-[30px] h-[30px] rounded-full bg-pine text-cream text-[10px] font-extrabold flex items-center justify-center shrink-0">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
@@ -532,7 +534,7 @@ function PresenceCard({ a, response, aggregate, allMembers, onRespond, profMode,
           onClick={() => onRespond(a.id, "present")}
           className={`flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-2.5 rounded-[12px] border transition-all active:scale-[0.98] ${
             response === "present"
-              ? "bg-pine text-paper border-pine shadow-card"
+              ? "bg-pine text-cream border-pine shadow-card"
               : "bg-paper text-ink-soft border-[rgba(34,30,24,0.12)]"
           }`}
         >
@@ -543,7 +545,7 @@ function PresenceCard({ a, response, aggregate, allMembers, onRespond, profMode,
           onClick={() => onRespond(a.id, "absent")}
           className={`flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-2.5 rounded-[12px] border transition-all active:scale-[0.98] ${
             response === "absent"
-              ? "bg-ink text-paper border-ink shadow-card"
+              ? "bg-night text-cream border-ink shadow-card"
               : "bg-paper text-ink-soft border-[rgba(34,30,24,0.12)]"
           }`}
         >
@@ -646,7 +648,7 @@ function AnnouncementCard({ a, isAdmin, onTogglePin, onDelete }) {
       a.pinned ? "border-gold/55 shadow-pinned" : "border-[rgba(34,30,24,0.07)]"
     }`}>
       <div className="flex items-center gap-2.5">
-        <div className={`w-[30px] h-[30px] rounded-full text-paper text-[10px] font-extrabold flex items-center justify-center shrink-0 ${
+        <div className={`w-[30px] h-[30px] rounded-full text-cream text-[10px] font-extrabold flex items-center justify-center shrink-0 ${
           a.pinned ? "bg-gold" : "bg-pine"
         }`}>
           {initials}
@@ -704,7 +706,7 @@ function GradeCard({ g }) {
 
       <div className="bg-white p-4 space-y-3.5">
         {g.note && (
-          <div className="text-[10px] font-bold tracking-seal text-sand-50 bg-ink inline-block px-2 py-1 rounded">
+          <div className="text-[10px] font-bold tracking-seal text-sand-50 bg-night inline-block px-2 py-1 rounded">
             {g.note.toUpperCase()}
           </div>
         )}
@@ -740,7 +742,7 @@ function GradeCard({ g }) {
 
         {g.sections.map((s) => (
           <div key={s.title} className="rounded-xl overflow-hidden border border-sand-200">
-            <div className="bg-ink text-sand-50 text-[11px] font-semibold px-3 py-1.5">
+            <div className="bg-night text-sand-50 text-[11px] font-semibold px-3 py-1.5">
               {s.title}
             </div>
             <div className="divide-y divide-sand-100">
@@ -829,7 +831,7 @@ function ProgrammeContent({ g }) {
   return (
     <div className="space-y-4">
       {g.note && (
-        <div className="inline-block text-[10px] font-bold tracking-section uppercase bg-ink text-paper px-2.5 py-1 rounded">
+        <div className="inline-block text-[10px] font-bold tracking-section uppercase bg-night text-cream px-2.5 py-1 rounded">
           {g.note}
         </div>
       )}
@@ -862,7 +864,7 @@ function ProgrammeContent({ g }) {
       )}
       {g.sections.map((s) => (
         <div key={s.title} className="rounded-[14px] overflow-hidden border border-[rgba(34,30,24,0.07)]">
-          <div className="bg-pine text-paper text-[11px] font-bold tracking-section uppercase px-3 py-2">
+          <div className="bg-pine text-cream text-[11px] font-bold tracking-section uppercase px-3 py-2">
             {s.title}
           </div>
           <div className="divide-y divide-[rgba(34,30,24,0.06)] bg-paper">
@@ -971,7 +973,7 @@ function GradesTab({
       )}
 
       {/* Grade actuel hero */}
-      <div className="mx-5 mt-[22px] rounded-[24px] bg-hero-pine text-paper p-6 relative overflow-hidden shadow-heroDark">
+      <div className="mx-5 mt-[22px] rounded-[24px] bg-hero-pine text-cream p-6 relative overflow-hidden shadow-heroDark">
         <div className="flex items-center gap-[14px]">
           <div
             className="w-[14px] h-[54px] rounded-[5px] shadow-[0_0_0_1px_rgba(255,255,255,0.15)] shrink-0"
@@ -984,7 +986,7 @@ function GradesTab({
             <div className="font-serif text-[32px] font-semibold leading-[1.05] mt-1">
               {current.label}
             </div>
-            <div className="text-[12px] text-paper/70 mt-0.5">
+            <div className="text-[12px] text-cream/70 mt-0.5">
               {signedIn && obtainedLabel ? `Obtenu en ${obtainedLabel}` : current.belt}
             </div>
           </div>
@@ -995,7 +997,7 @@ function GradesTab({
               <select
                 value={current.id}
                 onChange={(e) => setFallbackGradeId(e.target.value)}
-                className="appearance-none bg-paper/15 border border-paper/30 text-paper text-[11px] font-semibold tracking-wide rounded-full pl-3 pr-7 py-1.5 focus:outline-none focus:border-gold cursor-pointer"
+                className="appearance-none bg-cream/15 border border-cream/30 text-cream text-[11px] font-semibold tracking-wide rounded-full pl-3 pr-7 py-1.5 focus:outline-none focus:border-gold cursor-pointer"
               >
                 {GRADES.map((g) => (
                   <option key={g.id} value={g.id} className="text-ink">
@@ -1003,7 +1005,7 @@ function GradesTab({
                   </option>
                 ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-paper/70" />
+              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-cream/70" />
             </label>
           )}
           {/* Self-edit shortcut for profs — opens the same picker modal
@@ -1012,18 +1014,18 @@ function GradesTab({
             <button
               type="button"
               onClick={onEditMyGrade}
-              className="shrink-0 w-8 h-8 rounded-full bg-paper/15 border border-paper/30 flex items-center justify-center hover:bg-paper/25"
+              className="shrink-0 w-8 h-8 rounded-full bg-cream/15 border border-cream/30 flex items-center justify-center hover:bg-cream/25"
               title="Modifier mon grade ou ma date d'obtention"
             >
-              <Pencil size={13} className="text-paper" />
+              <Pencil size={13} className="text-cream" />
             </button>
           )}
         </div>
         {next && (
           <>
-            <div className="flex items-center justify-between text-[12px] text-paper/80 mt-5">
+            <div className="flex items-center justify-between text-[12px] text-cream/80 mt-5">
               <span>
-                Vers le <strong className="text-paper">{next.label}</strong>
+                Vers le <strong className="text-cream">{next.label}</strong>
               </span>
               {signedIn && targetMonths > 0 ? (
                 <span className="tabular-nums">
@@ -1035,14 +1037,14 @@ function GradesTab({
                 <span>Durée min. {next.duration}</span>
               )}
             </div>
-            <div className="mt-2.5 h-2 rounded-full bg-paper/15 overflow-hidden">
+            <div className="mt-2.5 h-2 rounded-full bg-cream/15 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gold-bar transition-all duration-500"
                 style={{ width: `${signedIn ? progressPct : 0}%` }}
               />
             </div>
             {signedIn && targetMonths > 0 && (
-              <div className="text-[10.5px] text-paper/60 mt-1.5 tracking-wide">
+              <div className="text-[10.5px] text-cream/60 mt-1.5 tracking-wide">
                 {elapsedMonths.toFixed(1)} / {targetMonths} mois minimum
               </div>
             )}
@@ -1109,7 +1111,7 @@ function GradesTab({
                   <div className="text-[11px] text-ink-muted">{BELT_JP[g.id]} · {g.belt}</div>
                 </div>
                 {isCurrent && (
-                  <span className="text-[10px] tracking-section uppercase bg-pine text-paper px-2.5 py-1 rounded-full font-bold shrink-0">
+                  <span className="text-[10px] tracking-section uppercase bg-pine text-cream px-2.5 py-1 rounded-full font-bold shrink-0">
                     Vous êtes ici
                   </span>
                 )}
@@ -1556,7 +1558,7 @@ export default function CostaVerdeApp() {
             <button
               type="button"
               onClick={() => setKickedFromDevice(false)}
-              className="shrink-0 w-6 h-6 rounded-full bg-paper/40 flex items-center justify-center"
+              className="shrink-0 w-6 h-6 rounded-full bg-cream/40 flex items-center justify-center"
               title="Fermer"
             >
               <X size={11} />
@@ -1589,7 +1591,7 @@ export default function CostaVerdeApp() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="text-[10.5px] font-bold tracking-seal text-gold uppercase">
-                    Costa Verde Aïkido
+                    Kanjo Aïkido Isulanu
                   </div>
                   <div className="font-serif text-[36px] font-semibold leading-none mt-2 text-ink">
                     Planning
@@ -1611,7 +1613,7 @@ export default function CostaVerdeApp() {
                     onClick={() => setLocation(loc)}
                     className={`flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-1.5 rounded-full border shrink-0 transition-colors ${
                       location === loc
-                        ? "bg-pine text-paper border-pine"
+                        ? "bg-pine text-cream border-pine"
                         : "bg-paper-card text-ink-muted border-[rgba(34,30,24,0.07)]"
                     }`}
                   >
@@ -1623,7 +1625,7 @@ export default function CostaVerdeApp() {
 
               {/* Prochain cours hero */}
               {nextCourseSlot ? (
-                <div className="mt-[22px] relative rounded-[24px] bg-hero-pine text-paper p-[22px] overflow-hidden shadow-heroDark animate-slide-up">
+                <div className="mt-[22px] relative rounded-[24px] bg-hero-pine text-cream p-[22px] overflow-hidden shadow-heroDark animate-slide-up">
                   <div aria-hidden className="kanji-watermark absolute -right-1.5 -bottom-6 text-[104px] leading-none text-gold-400/15">
                     道
                   </div>
@@ -1635,14 +1637,14 @@ export default function CostaVerdeApp() {
                       <div className="font-serif text-[44px] font-semibold leading-none tabular-nums">
                         {nextCourseSlot.course.start}
                       </div>
-                      <div className="text-[14px] text-paper/65 tabular-nums">
+                      <div className="text-[14px] text-cream/65 tabular-nums">
                         → {nextCourseSlot.course.end}
                       </div>
                     </div>
                     <div className="font-serif text-[21px] mt-1.5">
                       {nextCourseSlot.course.title}
                     </div>
-                    <div className="flex flex-wrap gap-3.5 mt-4 text-[12.5px] text-paper/80">
+                    <div className="flex flex-wrap gap-3.5 mt-4 text-[12.5px] text-cream/80">
                       <span>◦  {DOJO_INFO.name}</span>
                       <span>◦  {location}</span>
                       <span>◦  {nextCourseSlot.course.prof === PROF_PLACEHOLDER ? "À confirmer" : nextCourseSlot.course.prof}</span>
@@ -1772,7 +1774,7 @@ export default function CostaVerdeApp() {
                       <div className="grid grid-cols-2 gap-2.5">
                         <button
                           onClick={() => setComposing(true)}
-                          className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-paper bg-pine rounded-[14px] py-3 shadow-card transition-transform active:scale-[0.98]"
+                          className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-cream bg-pine rounded-[14px] py-3 shadow-card transition-transform active:scale-[0.98]"
                         >
                           <Plus size={14} />
                           Annonce
@@ -1841,7 +1843,7 @@ export default function CostaVerdeApp() {
                         <button
                           onClick={launchRollCall}
                           disabled={publishing}
-                          className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+                          className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
                         >
                           <ClipboardCheck size={12} />
                           {publishing ? "Envoi…" : "Lancer l'appel"}
@@ -1892,7 +1894,7 @@ export default function CostaVerdeApp() {
                         <button
                           onClick={publish}
                           disabled={publishing || !draft.body.trim()}
-                          className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+                          className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
                         >
                           <Check size={12} />
                           {publishing ? "Envoi…" : "Publier"}
@@ -2025,7 +2027,7 @@ export default function CostaVerdeApp() {
       {push.toast && (
         <button
           onClick={push.dismissToast}
-          className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-3 right-3 z-40 flex items-start gap-2.5 text-left bg-ink text-sand-50 rounded-2xl px-3.5 py-3 shadow-device animate-slide-up"
+          className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-3 right-3 z-40 flex items-start gap-2.5 text-left bg-night text-sand-50 rounded-2xl px-3.5 py-3 shadow-device animate-slide-up"
         >
           <div className="w-8 h-8 rounded-full bg-vermillion-500 flex items-center justify-center shrink-0">
             <Bell size={15} />
@@ -2183,7 +2185,7 @@ function ProfileModal({ initialLicence, initialFirstName, initialLastName, onSav
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 bg-night/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <form
@@ -2274,7 +2276,7 @@ function ProfileModal({ initialLicence, initialFirstName, initialLastName, onSav
           <button
             type="submit"
             disabled={busy}
-            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Check size={14} />
             {busy ? "…" : found ? "S'identifier" : "Enregistrer"}
@@ -2292,9 +2294,9 @@ function AddMemberModal({ onSave, onClose }) {
   const [grade, setGrade] = useState(GRADES[0].id);
   const [dateInput, setDateInput] = useState(timestampToDateInput(null));
   const [birthYM, setBirthYM] = useState("");
-  // Par défaut : on coche Santa Maria (le dojo principal). Le prof peut
-  // décocher ou ajouter Vescovato selon le membre.
-  const [practiceLocations, setPracticeLocations] = useState(["Santa Maria Poggio"]);
+  // Par défaut : on coche le dojo de Vescovato. Le prof peut ajuster
+  // selon le membre.
+  const [practiceLocations, setPracticeLocations] = useState(["Vescovato"]);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -2341,7 +2343,7 @@ function AddMemberModal({ onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 bg-night/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <form
@@ -2466,7 +2468,7 @@ function AddMemberModal({ onSave, onClose }) {
                     onClick={() => toggleLocation(loc)}
                     className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold rounded-lg px-2 py-2 border transition-colors ${
                       checked
-                        ? "bg-pine text-paper border-pine shadow-card"
+                        ? "bg-pine text-cream border-pine shadow-card"
                         : "bg-paper text-ink-muted border-[rgba(34,30,24,0.12)]"
                     }`}
                   >
@@ -2496,7 +2498,7 @@ function AddMemberModal({ onSave, onClose }) {
           <button
             type="submit"
             disabled={busy}
-            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Check size={14} />
             {busy ? "Création…" : "Ajouter"}
@@ -2700,7 +2702,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-stretch sm:items-center justify-center sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-night/50 backdrop-blur-sm flex items-stretch sm:items-center justify-center sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -2738,7 +2740,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                   onClick={() => setLocationFilter(loc)}
                   className={`flex-1 flex items-center justify-center gap-1.5 text-[11.5px] font-semibold rounded-full px-3 py-1.5 transition-colors border ${
                     active
-                      ? "bg-pine text-paper border-pine shadow-card"
+                      ? "bg-pine text-cream border-pine shadow-card"
                       : "bg-paper-card text-ink-soft border-[rgba(34,30,24,0.12)]"
                   }`}
                 >
@@ -2920,7 +2922,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                         disabled={locked}
                         className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                           state === "present"
-                            ? "bg-pine text-paper"
+                            ? "bg-pine text-cream"
                             : "bg-paper border border-[rgba(34,30,24,0.12)] text-ink-muted"
                         } ${locked ? "cursor-not-allowed" : ""}`}
                         title="Présent"
@@ -2933,7 +2935,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                         disabled={locked}
                         className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                           state === "absent"
-                            ? "bg-vermillion-500 text-paper"
+                            ? "bg-vermillion-500 text-cream"
                             : "bg-paper border border-[rgba(34,30,24,0.12)] text-ink-muted"
                         } ${locked ? "cursor-not-allowed" : ""}`}
                         title="Absent"
@@ -2964,7 +2966,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
             type="button"
             onClick={submit}
             disabled={busy || locked}
-            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2.5 flex items-center gap-1.5 shadow-card disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2.5 flex items-center gap-1.5 shadow-card disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ClipboardList size={14} />
             {locked
@@ -3061,7 +3063,7 @@ function StageModal({ prof, onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 bg-night/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -3160,7 +3162,7 @@ function StageModal({ prof, onSave, onClose }) {
                 <button
                   type="button"
                   onClick={() => setAfficheFile(null)}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/80 text-paper flex items-center justify-center"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-night/80 text-cream flex items-center justify-center"
                   title="Retirer l'affiche"
                 >
                   <X size={13} strokeWidth={2.4} />
@@ -3199,7 +3201,7 @@ function StageModal({ prof, onSave, onClose }) {
             type="button"
             onClick={submit}
             disabled={busy}
-            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Award size={14} />
             {busy ? "Enregistrement…" : "Annoncer"}
@@ -3272,7 +3274,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 bg-night/50 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -3367,7 +3369,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
                   onClick={() => toggleLocation(loc)}
                   className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold rounded-lg px-2 py-2 border transition-colors ${
                     checked
-                      ? "bg-pine text-paper border-pine shadow-card"
+                      ? "bg-pine text-cream border-pine shadow-card"
                       : "bg-paper-card text-ink-muted border-[rgba(34,30,24,0.12)]"
                   }`}
                 >
@@ -3428,7 +3430,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
                 >
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center font-serif text-[13px] shrink-0 ${
-                      checked ? "bg-pine text-paper" : "bg-paper text-ink-muted border border-[rgba(34,30,24,0.07)]"
+                      checked ? "bg-pine text-cream" : "bg-paper text-ink-muted border border-[rgba(34,30,24,0.07)]"
                     }`}
                   >
                     {MANUAL_KANJI[id]}
@@ -3477,7 +3479,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
             type="button"
             onClick={submit}
             disabled={busy || !dirty}
-            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Check size={14} />
             {busy ? "Enregistrement…" : "Enregistrer"}
@@ -3492,7 +3494,7 @@ function StatTile({ label, value, hint, tone = "ink" }) {
   return (
     <div className={`rounded-[16px] p-4 border ${
       tone === "pine"
-        ? "bg-hero-pine text-paper border-pine/0 shadow-heroDark"
+        ? "bg-hero-pine text-cream border-pine/0 shadow-heroDark"
         : "bg-paper-card text-ink border-[rgba(34,30,24,0.07)] shadow-card"
     }`}>
       <div className={`text-[10.5px] font-bold tracking-section uppercase ${
@@ -3504,7 +3506,7 @@ function StatTile({ label, value, hint, tone = "ink" }) {
         {value}
       </div>
       {hint && (
-        <div className={`text-[11px] mt-1 leading-snug ${tone === "pine" ? "text-paper/70" : "text-ink-muted"}`}>
+        <div className={`text-[11px] mt-1 leading-snug ${tone === "pine" ? "text-cream/70" : "text-ink-muted"}`}>
           {hint}
         </div>
       )}
@@ -3528,7 +3530,7 @@ function PendingTile({ label, reason }) {
 
 // Inline SVG sparkline — no chart library. Pass series = [{ when, count }]
 // already ordered chronologically and the chart auto-scales both axes.
-function Sparkline({ series, height = 70, color = "#1F3A2E" }) {
+function Sparkline({ series, height = 70, color = "#c9a24d" }) {
   if (!series || series.length < 2) {
     return (
       <div
@@ -3945,7 +3947,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         <button
           type="button"
           onClick={onOpenPointage}
-          className="w-full bg-hero-pine text-paper rounded-[18px] px-5 py-4 flex items-center gap-4 shadow-heroDark active:scale-[0.99] transition-transform"
+          className="w-full bg-hero-pine text-cream rounded-[18px] px-5 py-4 flex items-center gap-4 shadow-heroDark active:scale-[0.99] transition-transform"
         >
           <div className="w-11 h-11 rounded-full bg-gold/20 ring-1 ring-gold/40 flex items-center justify-center shrink-0">
             <ClipboardList size={20} className="text-gold-400" />
@@ -3957,7 +3959,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
             <div className="font-serif text-[18px] font-semibold leading-tight mt-0.5">
               Faire le pointage
             </div>
-            <div className="text-[11.5px] text-paper/70 leading-snug mt-0.5">
+            <div className="text-[11.5px] text-cream/70 leading-snug mt-0.5">
               Enregistrer les présents du cours en cours.
             </div>
           </div>
@@ -3992,7 +3994,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                 onClick={() => setLocationFilter(opt.id)}
                 className={`text-[11.5px] font-semibold rounded-full px-3 py-1.5 transition-colors border ${
                   active
-                    ? "bg-pine text-paper border-pine shadow-card"
+                    ? "bg-pine text-cream border-pine shadow-card"
                     : "bg-paper-card text-ink-soft border-[rgba(34,30,24,0.12)] hover:border-pine/30"
                 }`}
               >
@@ -4286,7 +4288,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                   key={m.id}
                   className="bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[14px] px-4 py-2.5 flex items-center gap-3"
                 >
-                  <div className="w-[26px] h-[26px] rounded-full bg-pine text-paper text-[10px] font-extrabold flex items-center justify-center shrink-0">
+                  <div className="w-[26px] h-[26px] rounded-full bg-pine text-cream text-[10px] font-extrabold flex items-center justify-center shrink-0">
                     {profInitials(`${m.firstName} ${m.lastName}`)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -4329,7 +4331,7 @@ function CelebrationModal({ event, memberName, onClose }) {
   // hors viewport quand on a scrollé.
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] bg-ink/65 backdrop-blur-sm flex items-center justify-center p-5 animate-fade-in"
+      className="fixed inset-0 z-[60] bg-night/65 backdrop-blur-sm flex items-center justify-center p-5 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -4383,7 +4385,7 @@ function CelebrationModal({ event, memberName, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="mt-6 w-full text-[12.5px] font-semibold text-paper bg-pine rounded-full px-4 py-2.5 shadow-card"
+            className="mt-6 w-full text-[12.5px] font-semibold text-cream bg-pine rounded-full px-4 py-2.5 shadow-card"
           >
             Continuer
           </button>
@@ -4538,20 +4540,20 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
           <ChevronDown size={14} className="text-ink-muted -rotate-90" />
         </button>
 
-        <div className="mt-6 p-5 rounded-[20px] bg-hero-pine text-paper relative overflow-hidden shadow-heroDark">
+        <div className="mt-6 p-5 rounded-[20px] bg-hero-pine text-cream relative overflow-hidden shadow-heroDark">
           <div aria-hidden className="kanji-watermark absolute -right-3 -top-3 text-[100px] text-gold-400/15">
             道
           </div>
           <div className="relative">
             <div className="text-[10.5px] font-bold tracking-section text-gold-400 uppercase">
-              Costa Verde Aïkido
+              Kanjo Aïkido Isulanu
             </div>
             <div className="font-serif text-[20px] font-semibold mt-1">
               Un dojo ouvert à tous, sans esprit de compétition.
             </div>
-            <div className="text-[12.5px] text-paper/80 mt-2 leading-snug">
-              Affilié FFAB · reconnu par l'Aïkikaï de Tokyo. Fondé en 2004 par
-              Jean-Charles à Santa Maria Poggio.
+            <div className="text-[12.5px] text-cream/80 mt-2 leading-snug">
+              Affilié FFAB · reconnu par l'Aïkikaï de Tokyo. Un dojo corse,
+              à Vescovato.
             </div>
           </div>
         </div>
@@ -4643,7 +4645,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
 
   // ---- Badges (computés on the fly, pas de stockage) ----
   const yearsOfPractice = yearsSince(member.createdAt);
-  // Hakama : tradition Costa Verde — donné à partir du 3e kyu.
+  // Hakama : tradition du club — donné à partir du 3e kyu.
   const hakamaIdx = GRADES.findIndex((g) => g.id === "3kyu");
   // Badges complets — 25 au total. Dérivés à la volée par la spec
   // partagée (src/badges/spec.js). `manualBadges` est la liste posée
@@ -4697,7 +4699,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
   return (
     <>
       {/* Profile / grade hero — compact */}
-      <div className="mx-5 mt-5 rounded-[20px] bg-hero-pine text-paper p-5 relative overflow-hidden shadow-heroDark">
+      <div className="mx-5 mt-5 rounded-[20px] bg-hero-pine text-cream p-5 relative overflow-hidden shadow-heroDark">
         <div className="flex items-center gap-3">
           <div
             className="w-[12px] h-[46px] rounded-[5px] shadow-[0_0_0_1px_rgba(255,255,255,0.15)] shrink-0"
@@ -4710,7 +4712,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
             <div className="font-serif text-[26px] font-semibold leading-tight mt-0.5">
               {grade.label}
             </div>
-            <div className="text-[11.5px] text-paper/70 mt-0.5">
+            <div className="text-[11.5px] text-cream/70 mt-0.5">
               {obtained ? `Obtenu en ${obtained}` : grade.belt}
             </div>
           </div>
@@ -4718,22 +4720,22 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
             <button
               type="button"
               onClick={onEditMyGrade}
-              className="shrink-0 w-8 h-8 rounded-full bg-paper/15 border border-paper/30 flex items-center justify-center hover:bg-paper/25"
+              className="shrink-0 w-8 h-8 rounded-full bg-cream/15 border border-cream/30 flex items-center justify-center hover:bg-cream/25"
               title="Modifier"
             >
-              <Pencil size={13} className="text-paper" />
+              <Pencil size={13} className="text-cream" />
             </button>
           )}
         </div>
         {next && target > 0 && (
           <>
-            <div className="flex items-center justify-between text-[11.5px] text-paper/80 mt-4">
-              <span>Vers <strong className="text-paper">{next.label}</strong></span>
+            <div className="flex items-center justify-between text-[11.5px] text-cream/80 mt-4">
+              <span>Vers <strong className="text-cream">{next.label}</strong></span>
               <span className="tabular-nums">
                 {monthsLeft > 0 ? `Encore ~${monthsLeft.toFixed(1)} mois` : "Durée minimale atteinte"}
               </span>
             </div>
-            <div className="mt-2 h-2 rounded-full bg-paper/15 overflow-hidden">
+            <div className="mt-2 h-2 rounded-full bg-cream/15 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gold-bar transition-all duration-500"
                 style={{ width: `${pct}%` }}
@@ -4823,7 +4825,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
           <div
             className={`rounded-[16px] px-4 py-4 flex items-center gap-4 shadow-card ${
               nextClass.inProgress
-                ? "bg-hero-pine text-paper border border-pine/0"
+                ? "bg-hero-pine text-cream border border-pine/0"
                 : "bg-paper-card border border-[rgba(34,30,24,0.07)]"
             }`}
           >
@@ -4839,38 +4841,38 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
               </div>
               <div
                 className={`font-serif text-[22px] font-semibold leading-none mt-1 tabular-nums ${
-                  nextClass.inProgress ? "text-paper" : "text-ink"
+                  nextClass.inProgress ? "text-cream" : "text-ink"
                 }`}
               >
                 {nextClass.course.start}
               </div>
               <div
                 className={`text-[10.5px] tabular-nums ${
-                  nextClass.inProgress ? "text-paper/70" : "text-ink-muted"
+                  nextClass.inProgress ? "text-cream/70" : "text-ink-muted"
                 }`}
               >
                 {nextClass.course.end}
               </div>
             </div>
-            <div className={`w-px self-stretch ${nextClass.inProgress ? "bg-paper/15" : "hairline"}`} />
+            <div className={`w-px self-stretch ${nextClass.inProgress ? "bg-cream/15" : "hairline"}`} />
             <div className="flex-1 min-w-0">
               <div
                 className={`font-serif text-[15px] font-semibold leading-tight ${
-                  nextClass.inProgress ? "text-paper" : "text-ink"
+                  nextClass.inProgress ? "text-cream" : "text-ink"
                 }`}
               >
                 {nextClass.course.title}
               </div>
               <div
                 className={`text-[12px] mt-0.5 ${
-                  nextClass.inProgress ? "text-paper/70" : "text-ink-soft"
+                  nextClass.inProgress ? "text-cream/70" : "text-ink-soft"
                 }`}
               >
                 {nextClass.course.location}
               </div>
               <div
                 className={`text-[12px] mt-0.5 ${
-                  nextClass.inProgress ? "text-paper/70" : "text-ink-soft"
+                  nextClass.inProgress ? "text-cream/70" : "text-ink-soft"
                 }`}
               >
                 {nextClass.course.prof === PROF_PLACEHOLDER
@@ -5021,7 +5023,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
                     }}
                     className={`mt-3 w-full rounded-[12px] px-3 py-2 text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-colors ${
                       (s.attendeeIds || []).includes(member.id)
-                        ? "bg-pine text-paper shadow-card"
+                        ? "bg-pine text-cream shadow-card"
                         : "bg-paper border border-gold/40 text-gold"
                     }`}
                   >
@@ -5116,7 +5118,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
               {seasonTimeline.map((it, i) => (
                 <div key={`${it.kind}-${it.when}-${i}`} className="relative flex items-start gap-3 py-2">
                   <div
-                    className={`absolute -left-[1px] top-3 w-[12px] h-[12px] rounded-full border-2 border-paper-card ${
+                    className={`absolute -left-[1px] top-3 w-[12px] h-[12px] rounded-full border-2 border-cream-card ${
                       it.kind === "grade" ? "bg-gold" : "bg-pine"
                     }`}
                   />
@@ -5233,7 +5235,7 @@ function DashboardTab({
     ? `${adherents.length} ${adherents.length > 1 ? "adhérents inscrits" : "adhérent inscrit"}`
     : member
     ? `Bonjour ${member.firstName}`
-    : "Costa Verde Aïkido · Santa Maria Poggio";
+    : "Kanjo Aïkido Isulanu · Vescovato";
 
   return (
     <div key="dashboard" className="pb-7 animate-slide-in-right">
@@ -5393,7 +5395,7 @@ function MembersTab({ members, onEdit, onAdd }) {
         <button
           type="button"
           onClick={onAdd}
-          className="shrink-0 flex items-center gap-1.5 text-[12.5px] font-semibold text-paper bg-pine rounded-full pl-3 pr-4 py-2 shadow-card transition-transform active:scale-[0.98]"
+          className="shrink-0 flex items-center gap-1.5 text-[12.5px] font-semibold text-cream bg-pine rounded-full pl-3 pr-4 py-2 shadow-card transition-transform active:scale-[0.98]"
           title="Ajouter un adhérent"
         >
           <UserPlus size={14} />
@@ -5462,7 +5464,7 @@ function ProfGateModal({ onAuthenticated, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 bg-night/40 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 pt-[max(env(safe-area-inset-top),1rem)] sm:pt-4 animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <form
@@ -5471,7 +5473,7 @@ function ProfGateModal({ onAuthenticated, onClose }) {
         className="bg-white w-full max-w-sm rounded-2xl shadow-device border border-sand-200 p-5 space-y-4 animate-slide-up"
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-night flex items-center justify-center shrink-0">
             <KeyRound size={16} className="text-sand-50" />
           </div>
           <div className="flex-1">
@@ -5515,7 +5517,7 @@ function ProfGateModal({ onAuthenticated, onClose }) {
           </button>
           <button
             type="submit"
-            className="text-[12.5px] font-semibold text-sand-50 bg-ink rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card transition-transform active:scale-[0.98]"
+            className="text-[12.5px] font-semibold text-sand-50 bg-night rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card transition-transform active:scale-[0.98]"
           >
             <Check size={14} />
             Valider

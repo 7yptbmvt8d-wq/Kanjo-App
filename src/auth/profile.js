@@ -2,8 +2,8 @@
 // data (name, grade, history) lives in Firestore; this is just the key the
 // app uses to fetch its own doc.
 
-const STORAGE_KEY = "costa-verde:member-licence";
-const DEVICE_KEY = "costa-verde:device-id";
+const STORAGE_KEY = "kanjo-aikido:member-licence";
+const DEVICE_KEY = "kanjo-aikido:device-id";
 
 export function loadLicenceFromStorage() {
   try {

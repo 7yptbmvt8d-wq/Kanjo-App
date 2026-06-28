@@ -8,14 +8,12 @@
 // casual confusion ("oops, wrong button") not malicious actors. For a
 // hardened setup, swap this for Firebase Auth + Firestore role check.
 
-const STORAGE_KEY = "costa-verde:prof";
+const STORAGE_KEY = "kanjo-aikido:prof";
 
 // Map prof display name → PIN code. Names match PROFS in seed.js so the
 // existing author dropdowns keep working.
 const PROF_CODES = {
   "Sébastien": import.meta.env.VITE_PROF_CODE_SEBASTIEN || "",
-  "Jean-Charles": import.meta.env.VITE_PROF_CODE_JC || "",
-  "Sandra": import.meta.env.VITE_PROF_CODE_SANDRA || "",
 };
 
 export const profGateConfigured = Object.values(PROF_CODES).some(Boolean);

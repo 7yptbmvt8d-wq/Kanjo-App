@@ -7,14 +7,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "branding/logo-ffab.jpg"],
+      includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "branding/logo-kanjo.png"],
       manifest: {
-        name: "Costa Verde Aïkido",
-        short_name: "Costa Verde",
+        name: "Kanjo Aïkido Isulanu",
+        short_name: "Kanjo Aïkido",
         description:
-          "L'app des adhérents du Costa Verde Aïkido (Santa Maria Poggio, Haute-Corse). Planning, annonces, appel, fiches de progression.",
-        theme_color: "#16291F",
-        background_color: "#F1E9DA",
+          "L'app des adhérents du Kanjo Aïkido Isulanu (Vescovato, Corse). Planning, annonces, appel, fiches de progression.",
+        theme_color: "#090805",
+        background_color: "#090805",
         display: "standalone",
         orientation: "portrait",
         scope: "/",

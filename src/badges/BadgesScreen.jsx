@@ -36,8 +36,8 @@ export default function BadgesScreen({ badges, member, onClose, onSelfDeclareNex
     return {
       key, sub, label, note, items,
       earnedCount, total: full.length,
-      pillBg: complete ? "#C9A86A" : "rgba(34,30,24,0.06)",
-      pillColor: complete ? "#16291F" : "#9A9078",
+      pillBg: complete ? "#c9a24d" : "rgba(201,162,77,0.12)",
+      pillColor: complete ? "#0d0b07" : "#8a7d5c",
     };
   }).filter((g) => g.items.length > 0);
 
@@ -54,7 +54,7 @@ export default function BadgesScreen({ badges, member, onClose, onSelfDeclareNex
         <div className="flex items-center gap-3 px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-1.5">
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-paper-card border border-[rgba(34,30,24,0.08)] flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-paper-card border border-[rgba(201,162,77,0.16)] flex items-center justify-center"
             title="Retour"
           >
             <ChevronDown size={17} className="text-ink rotate-90" />
@@ -68,8 +68,8 @@ export default function BadgesScreen({ badges, member, onClose, onSelfDeclareNex
 
           {/* Hero progress */}
           <div
-            className="mt-5 rounded-[24px] text-paper p-[22px] flex items-center gap-5 relative overflow-hidden shadow-heroDark"
-            style={{ background: "linear-gradient(150deg,#244536,#16291F)" }}
+            className="mt-5 rounded-[24px] text-cream p-[22px] flex items-center gap-5 relative overflow-hidden shadow-heroDark"
+            style={{ background: "radial-gradient(circle at 50% 0%,#1c1a13,#090805 75%)" }}
           >
             <div
               aria-hidden
@@ -82,7 +82,7 @@ export default function BadgesScreen({ badges, member, onClose, onSelfDeclareNex
               className="shrink-0 w-[86px] h-[86px] rounded-full flex items-center justify-center"
               style={{ background: `conic-gradient(#C9A86A ${pctDeg}, rgba(241,233,218,0.16) 0)` }}
             >
-              <div className="w-[68px] h-[68px] rounded-full flex flex-col items-center justify-center" style={{ background: "#16291F" }}>
+              <div className="w-[68px] h-[68px] rounded-full flex flex-col items-center justify-center" style={{ background: "#090805" }}>
                 <div className="font-serif text-[26px] font-semibold leading-none">{earnedN}</div>
                 <div className="text-[10px] font-bold mt-0.5" style={{ color: "#C9A86A" }}>/ {total}</div>
               </div>
@@ -104,7 +104,7 @@ export default function BadgesScreen({ badges, member, onClose, onSelfDeclareNex
           </div>
 
           {/* Filter */}
-          <div className="mt-5 flex gap-1 p-1 rounded-[14px]" style={{ background: "#E7DDCB" }}>
+          <div className="mt-5 flex gap-1 p-1 rounded-[14px]" style={{ background: "#15120b" }}>
             {[
               { id: "all", label: "Tous" },
               { id: "earned", label: "Obtenus" },
@@ -118,8 +118,8 @@ export default function BadgesScreen({ badges, member, onClose, onSelfDeclareNex
                   onClick={() => setFilter(opt.id)}
                   className="flex-1 text-center py-2.5 rounded-[11px] text-[12px] font-bold transition-colors"
                   style={{
-                    background: active ? "#1F3A2E" : "transparent",
-                    color: active ? "#F1E9DA" : "#6B6253",
+                    background: active ? "#c9a24d" : "transparent",
+                    color: active ? "#0d0b07" : "#8a7d5c",
                   }}
                 >
                   {opt.label}
@@ -184,9 +184,9 @@ function styleForBadge(b) {
       stages: { bg: "linear-gradient(145deg,#2C5440,#16291F)", kc: "#C9A86A" },
       prof: { bg: "linear-gradient(145deg,#7C4232,#46221A)", kc: "#F2CB8C" },
     };
-    return map[b.cat] || { bg: "#E7DDCB", kc: "#C7BDA7" };
+    return map[b.cat] || { bg: "#15120b", kc: "#C7BDA7" };
   }
-  return { bg: "#E7DDCB", kc: "#C7BDA7" };
+  return { bg: "#15120b", kc: "#C7BDA7" };
 }
 
 function Medallion({ badge, onClick, size = 62 }) {
@@ -198,7 +198,7 @@ function Medallion({ badge, onClick, size = 62 }) {
         className="rounded-full flex items-center justify-center relative"
         style={{
           width: size, height: size, background: bg,
-          border: badge.earned ? "2px solid #C9A86A" : "1.5px solid rgba(34,30,24,0.10)",
+          border: badge.earned ? "2px solid #C9A86A" : "1.5px solid rgba(201,162,77,0.22)",
           boxShadow: badge.earned ? "0 8px 16px -8px rgba(34,30,24,0.55)" : "none",
           opacity: badge.earned ? 1 : 0.96,
         }}
@@ -209,7 +209,7 @@ function Medallion({ badge, onClick, size = 62 }) {
         {!badge.earned && (
           <div
             className="absolute -right-0.5 -bottom-0.5 w-5 h-5 rounded-full flex items-center justify-center"
-            style={{ background: "#F1E9DA", border: "1px solid rgba(34,30,24,0.1)" }}
+            style={{ background: "#F1E9DA", border: "1px solid rgba(201,162,77,0.22)" }}
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#A99E89" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <rect x="5" y="11" width="14" height="9" rx="2" />
@@ -220,7 +220,7 @@ function Medallion({ badge, onClick, size = 62 }) {
       </div>
       <div
         className="text-[10px] leading-tight text-center font-semibold"
-        style={{ color: badge.earned ? "#3A352C" : "#A99E89" }}
+        style={{ color: badge.earned ? "#bcb39f" : "#A99E89" }}
       >
         {badge.short}
       </div>
@@ -241,13 +241,13 @@ function BadgeDetail({ badge, catLabel, onClose, onSelfDeclare }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full bg-paper rounded-t-[28px] px-6 pt-3 pb-10 shadow-device animate-slide-up"
       >
-        <div className="w-[42px] h-[5px] mx-auto mb-5 rounded-full" style={{ background: "rgba(34,30,24,0.15)" }} />
+        <div className="w-[42px] h-[5px] mx-auto mb-5 rounded-full" style={{ background: "rgba(201,162,77,0.25)" }} />
         <div className="flex flex-col items-center">
           <div
             className="rounded-full flex items-center justify-center"
             style={{
               width: 104, height: 104, background: bg,
-              border: badge.earned ? "2px solid #C9A86A" : "1.5px solid rgba(34,30,24,0.10)",
+              border: badge.earned ? "2px solid #C9A86A" : "1.5px solid rgba(201,162,77,0.22)",
               boxShadow: badge.earned ? "0 8px 16px -8px rgba(34,30,24,0.55)" : "none",
               opacity: badge.earned ? 1 : 0.96,
             }}
@@ -270,13 +270,13 @@ function BadgeDetail({ badge, catLabel, onClose, onSelfDeclare }) {
         <div
           className="mt-5 rounded-[18px] px-4 py-4 flex gap-3 items-start"
           style={{
-            background: badge.earned ? "rgba(31,58,46,0.07)" : "#FBF7EE",
-            border: `1px solid ${badge.earned ? "rgba(31,58,46,0.18)" : "rgba(34,30,24,0.08)"}`,
+            background: badge.earned ? "rgba(201,162,77,0.09)" : "#15120b",
+            border: `1px solid ${badge.earned ? "rgba(201,162,77,0.30)" : "rgba(201,162,77,0.16)"}`,
           }}
         >
           <div
             className="shrink-0 w-[30px] h-[30px] rounded-full flex items-center justify-center"
-            style={{ background: badge.earned ? "#1F3A2E" : "rgba(169,129,70,0.14)" }}
+            style={{ background: badge.earned ? "#c9a24d" : "rgba(201,162,77,0.14)" }}
           >
             {badge.earned ? (
               <Check size={15} className="text-paper" strokeWidth={2.6} />
@@ -285,10 +285,10 @@ function BadgeDetail({ badge, catLabel, onClose, onSelfDeclare }) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-extrabold" style={{ color: badge.earned ? "#1F3A2E" : "#A98146" }}>
+            <div className="text-[13px] font-extrabold" style={{ color: badge.earned ? "#c9a24d" : "#A98146" }}>
               {badge.earned ? "Badge obtenu" : "À débloquer"}
             </div>
-            <div className="text-[13px] leading-[1.5] mt-0.5" style={{ color: "#4A4338" }}>
+            <div className="text-[13px] leading-[1.5] mt-0.5" style={{ color: "#bcb39f" }}>
               {badge.cond}
             </div>
           </div>
@@ -298,7 +298,7 @@ function BadgeDetail({ badge, catLabel, onClose, onSelfDeclare }) {
           <button
             onClick={() => { onSelfDeclare && onSelfDeclare(badge); }}
             className="mt-4 w-full text-center rounded-[14px] py-3.5 text-[14px] font-bold flex items-center justify-center gap-1.5"
-            style={{ background: "#1F3A2E", color: "#F1E9DA" }}
+            style={{ background: "#c9a24d", color: "#0d0b07" }}
           >
             <Award size={15} />
             Voir les stages éligibles

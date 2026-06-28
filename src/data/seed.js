@@ -6,92 +6,50 @@
 // schedule and announcements can be edited without a redeploy.
 
 
-export const LOCATIONS = ["Santa Maria Poggio", "Vescovato"];
-export const DAYS = ["Lundi", "Mercredi", "Vendredi"];
+export const LOCATIONS = ["Vescovato"];
+export const DAYS = ["Mercredi", "Jeudi", "Samedi"];
 
+// Créneaux repris de la maquette de design Kanjo (exemples) — à confirmer
+// avec les horaires réels du dojo de Vescovato.
 export const SEED_COURSES = [
-  // Santa Maria Poggio — horaires réels (site officiel)
   {
     id: 1,
-    day: "Lundi",
-    start: "18:45",
-    end: "20:30",
-    title: "Ados & Adultes",
-    prof: "Enseignant à confirmer",
-    location: "Santa Maria Poggio",
-    status: "normal",
-    baseline: 6,
-  },
-  {
-    id: 2,
     day: "Mercredi",
-    start: "17:15",
-    end: "18:30",
-    title: "Enfants 6-12 ans",
-    prof: "Enseignant à confirmer",
-    location: "Santa Maria Poggio",
-    status: "normal",
-    baseline: 8,
-  },
-  {
-    id: 3,
-    day: "Vendredi",
-    start: "18:00",
-    end: "19:00",
-    title: "Aïkitaïso",
-    prof: "Enseignant à confirmer",
-    location: "Santa Maria Poggio",
-    status: "normal",
-    baseline: 3,
-  },
-  {
-    id: 4,
-    day: "Vendredi",
-    start: "19:00",
-    end: "21:00",
-    title: "Ados & Adultes",
-    prof: "Enseignant à confirmer",
-    location: "Santa Maria Poggio",
-    status: "normal",
-    baseline: 5,
-  },
-
-  // Vescovato — projet d'antenne, pas encore validé
-  {
-    id: 5,
-    day: "Mercredi",
-    start: "16:00",
-    end: "17:30",
-    title: "Aïkido ados 12-18 ans",
+    start: "17:00",
+    end: "18:00",
+    title: "Enfants 7-12 ans",
     prof: "Sébastien",
     location: "Vescovato",
     status: "normal",
+    baseline: 11,
   },
   {
-    id: 6,
-    day: "Mercredi",
-    start: "17:45",
-    end: "18:45",
-    title: "Self-défense tout public",
-    prof: "Jean-Charles",
+    id: 2,
+    day: "Jeudi",
+    start: "19:00",
+    end: "21:00",
+    title: "Adultes · Tous niveaux",
+    prof: "Sébastien",
     location: "Vescovato",
     status: "normal",
+    baseline: 14,
   },
   {
-    id: 7,
-    day: "Vendredi",
-    start: "09:30",
-    end: "11:00",
-    title: "Séniors grands débutants",
-    prof: "Jean-Charles",
+    id: 3,
+    day: "Samedi",
+    start: "10:00",
+    end: "12:00",
+    title: "Armes · Bokken & Jō",
+    prof: "Sébastien",
     location: "Vescovato",
     status: "normal",
+    baseline: 8,
   },
 ];
 
 export const SEED_ANNOUNCEMENTS = [];
 
-export const PROFS = ["Sébastien", "Jean-Charles", "Sandra"];
+export const PROFS = ["Sébastien"];
 
 // Liste des profs identifiables dans la collection /members — sert à les
 // exclure du pointage et des classements (un prof n'est pas un adhérent
@@ -101,44 +59,40 @@ export const PROFS = ["Sébastien", "Jean-Charles", "Sandra"];
 // d'un prof qui partagent le même nom.
 export const PROF_MEMBERS = [
   { firstName: "Sébastien", lastName: "De Raedt" },
-  { firstName: "Jean-Charles", lastName: "Lanusse" },
-  { firstName: "Sandra", lastName: "Mori" },
 ];
 
-export const ROLL_CALL_TARGETS = ["Ados & Adultes", "Enfants 6-12 ans", "Aïkitaïso", "Tout le club"];
+export const ROLL_CALL_TARGETS = ["Adultes · Tous niveaux", "Armes · Bokken & Jō", "Enfants 7-12 ans", "Tout le club"];
 
-// Contenu inspiré du site costaverdeaikido.fr (à reformuler/valider avec Sébastien)
+// Esprit & histoire du Kanjo Aïkido Isulanu (à valider avec l'enseignant).
 
 export const HISTORY = [
   "L'Aïkido a été fondé au Japon dans les années 1930 par Morihei Ueshiba, O Sensei. Plutôt qu'un affrontement, il propose de canaliser l'énergie d'une attaque pour la rediriger — un art martial sans compétition, tourné vers le développement personnel.",
   "Nobuyoshi Tamura, élève proche d'O Sensei, a implanté l'Aïkido en France à partir de 1964 et a participé à la création de la FFAB, structurant la pédagogie, les examens et les stages encore en usage aujourd'hui.",
-  "Le Costa Verde Aïkido, fondé en 2004 à Santa Maria Poggio par Jean-Charles (Yondan), s'inscrit dans cette même filiation : un dojo ouvert à tous, sans esprit de compétition, affilié FFAB et reconnu par l'Aïkikaï de Tokyo.",
+  "En 2009, Tamura Senseï choisit le nom « Kanjo » — 感情, tendre la main à l'autre pour avancer ensemble. Le Kanjo Aïkido Isulanu fait vivre cet esprit en Corse : un dojo ouvert à tous, sans esprit de compétition, affilié FFAB et reconnu par l'Aïkikaï de Tokyo.",
 ];
 
 export const DOJO_INFO = {
-  name: "Maison du Temps",
-  address: "20221 Santa Maria Poggio",
-  phone: "06 33 25 34 97",
-  contact: "Sandra (présidente)",
+  name: "Dojo Kanjo Aïkido Isulanu",
+  address: "Vescovato (Haute-Corse)", // TODO: adresse précise
+  phone: "", // TODO: téléphone du club
+  contact: "Sébastien De Raedt (enseignant)",
   trial: "2 cours d'essai gratuits, sans engagement",
   medical: "Certificat médical obligatoire dès le début de la saison",
 };
 
+// TODO: confirmer la grille tarifaire réelle du club.
 export const FEES = [
-  { label: "Enfants (6–12 ans)", amount: "195 €", note: "150 €/enfant à partir de 2 enfants · Pass'Sport accepté" },
+  { label: "Enfants (7–12 ans)", amount: "195 €", note: "Pass'Sport accepté" },
   { label: "Ados / Adultes", amount: "255 €" },
   { label: "Tarif famille (1 adulte + 1 enfant)", amount: "315 €" },
 ];
 
+// TODO: renseigner les réseaux sociaux réels du Kanjo Aïkido Isulanu.
 export const LINKS = [
-  { label: "Facebook", url: "https://www.facebook.com/profile.php?id=100060578049566" },
-  { label: "Instagram", url: "https://www.instagram.com/costa_verde_aikido" },
-  { label: "YouTube", url: "https://www.youtube.com/@CostaVerdeAïkido" },
-  { label: "Chaîne WhatsApp", url: "https://whatsapp.com/channel/0029VbBHbsvBadmVHIxIFF3u" },
   { label: "FFAB", url: "https://www.ffabaikido.fr/fr/" },
 ];
 
-// Fiches de progression — Costa Verde Aïkido / FFAB
+// Fiches de progression — Kanjo Aïkido Isulanu / FFAB
 export const GRADES = [
   {
     id: "debutant",
@@ -358,7 +312,7 @@ export const GRADES = [
     culture: [
       "L'esprit de l'Aïkido selon O Senseï : un art de paix, fondé sur l'harmonie plutôt que sur l'opposition",
       "Chaîne de transmission : O Senseï → Tamura Senseï → enseignants FFAB → son professeur",
-      "Son club : Costa Verde Aïkido, fondé en 2004 par Jean-Charles (Yondan), affilié FFAB, reconnu par l'Aïkikaï de Tokyo",
+      "Son club : Kanjo Aïkido Isulanu, dojo corse affilié FFAB et reconnu par l'Aïkikaï de Tokyo",
     ],
   },
   {

@@ -155,11 +155,11 @@ export async function createOrUpdateMember(licenseNum, { firstName, lastName, gr
     gradeObtainedAt: gradeObtainedAt instanceof Date ? gradeObtainedAt : serverTimestamp(),
     gradeHistory: [],
     birthYM: typeof birthYM === "string" ? birthYM : null,
-    // Par défaut : aucun lieu coché → on tag les 2 dojos pour rester
-    // permissif tant que le prof n'a pas tranché.
+    // Par défaut : aucun lieu coché → on tag le dojo pour rester permissif
+    // tant que le prof n'a pas tranché.
     practiceLocations: Array.isArray(practiceLocations) && practiceLocations.length > 0
       ? practiceLocations
-      : ["Santa Maria Poggio", "Vescovato"],
+      : ["Vescovato"],
     createdAt: serverTimestamp(),
   });
 }

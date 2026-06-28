@@ -4,33 +4,47 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Costa Verde — papier crème, encre, pin et or.
+        // Kanjo Aïkido Isulanu — noir profond & or.
+        // Surfaces sombres : `paper` est le fond de page / des cartes (sombre),
+        // `pine` les surfaces d'accent (héros, onglets), `night` les pastilles
+        // sombres. `cream` porte le texte/overlay clair sur fond sombre.
         paper: {
-          DEFAULT: "#F1E9DA",
-          card: "#FBF7EE",
-          dark: "#bcb4a4",
+          DEFAULT: "#090805",
+          card: "#15120b",
+          dark: "#1c1a13",
         },
+        // Texte clair sur fond sombre + overlays translucides clairs.
+        cream: {
+          DEFAULT: "#f1e8d2",
+          card: "#ece3cf",
+        },
+        // Pastilles / chips sombres (anciennement bg-ink).
+        night: {
+          DEFAULT: "#0d0b07",
+        },
+        // Texte principal et nuances (clair → gris-or atténué).
         ink: {
-          DEFAULT: "#221E18",
-          soft: "#6B6253",
-          muted: "#9A9078",
-          body: "#3A352C",
-          body2: "#4A4338",
+          DEFAULT: "#ece3cf",
+          soft: "#bcb39f",
+          muted: "#8a7d5c",
+          body: "#bcb39f",
+          body2: "#aaa18d",
         },
+        // Surfaces d'accent sombres (héros, dégradés, tab bar).
         pine: {
-          DEFAULT: "#1F3A2E",
-          dark: "#16291F",
-          mid: "#244536",
-          tab: "#1d3528",
+          DEFAULT: "#15120b",
+          dark: "#090805",
+          mid: "#1c1a13",
+          tab: "#0d0b07",
         },
+        // Or Kanjo.
         gold: {
-          DEFAULT: "#A98146",
-          400: "#C9A86A",
-          300: "#E2C488",
+          DEFAULT: "#c9a24d",
+          400: "#d4b56a",
+          300: "#e2c488",
         },
-        // Legacy palette kept around as fallbacks while the redesign lands —
-        // remove once nothing references them.
-        ink_soft: "#292524",
+        ink_soft: "#bcb39f",
+        // Legacy palette kept around as fallbacks — unused by the Kanjo skin.
         vermillion: {
           50: "#fff1ed",
           200: "#fecaca",
@@ -47,15 +61,16 @@ export default {
           500: "#78716c",
         },
         washi: {
-          DEFAULT: "#faf6ee",
-          50: "#fdfbf6",
-          100: "#faf6ee",
-          200: "#f1ebde",
+          DEFAULT: "#1c1a13",
+          50: "#15120b",
+          100: "#15120b",
+          200: "#1c1a13",
         },
       },
       fontFamily: {
+        // Space Grotesk — eyebrows, labels, boutons, onglets, corps UI.
         sans: [
-          "Manrope",
+          "'Space Grotesk'",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
@@ -63,14 +78,12 @@ export default {
           "Roboto",
           "sans-serif",
         ],
-        display: ["Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: [
-          "Spectral",
-          "ui-serif",
-          "Georgia",
-          "serif",
-        ],
-        kanji: ["Spectral", "'Shippori Mincho'", "serif"],
+        // Cinzel — titres, chiffres, kanji latinisés.
+        display: ["Cinzel", "ui-serif", "Georgia", "serif"],
+        // Cormorant Garamond — corps éditorial, citations.
+        serif: ["'Cormorant Garamond'", "ui-serif", "Georgia", "serif"],
+        // Kanji affichés tels quels — Cinzel + repli CJK système.
+        kanji: ["Cinzel", "'Shippori Mincho'", "serif"],
       },
       letterSpacing: {
         seal: "0.2em",
@@ -78,18 +91,18 @@ export default {
         mark: "0.18em",
       },
       boxShadow: {
-        card: "0 8px 18px -14px rgba(34, 30, 24, 0.30)",
-        device: "0 30px 60px -30px rgba(28, 25, 23, 0.35), 0 8px 24px -8px rgba(28, 25, 23, 0.15)",
-        heroDark: "0 20px 34px -20px rgba(22, 41, 31, 0.85)",
-        pinned: "0 10px 24px -16px rgba(169, 129, 70, 0.6)",
-        lift: "0 12px 32px -16px rgba(28, 25, 23, 0.25), 0 4px 8px -4px rgba(28, 25, 23, 0.08)",
+        card: "0 8px 18px -14px rgba(0, 0, 0, 0.55)",
+        device: "0 30px 60px -30px rgba(0, 0, 0, 0.65), 0 8px 24px -8px rgba(0, 0, 0, 0.45)",
+        heroDark: "0 20px 34px -20px rgba(0, 0, 0, 0.85)",
+        pinned: "0 10px 24px -16px rgba(201, 162, 77, 0.6)",
+        lift: "0 12px 32px -16px rgba(0, 0, 0, 0.55), 0 4px 8px -4px rgba(0, 0, 0, 0.35)",
       },
       backgroundImage: {
-        "hero-pine": "linear-gradient(150deg, #244536, #16291F)",
-        "gold-bar": "linear-gradient(90deg, #C9A86A, #E2C488)",
-        "tabbar-pine": "linear-gradient(#1d3528, #16291F)",
+        "hero-pine": "radial-gradient(circle at 50% 0%, #1c1a13, #090805 70%)",
+        "gold-bar": "linear-gradient(90deg, #d4b56a, #e2c488)",
+        "tabbar-pine": "linear-gradient(rgba(9,8,5,0.72), #090805)",
         "paper-radial":
-          "radial-gradient(circle at 50% 22%, #dad3c4, #bcb4a4)",
+          "radial-gradient(circle at 50% 22%, #15120b, #090805)",
       },
       animation: {
         "fade-in": "fadeIn 240ms ease-out both",
@@ -119,8 +132,8 @@ export default {
           "100%": { transform: "scale(1)" },
         },
         pulseSlow: {
-          "0%, 100%": { transform: "scale(1)", boxShadow: "0 8px 24px rgba(169,129,70,0.40)" },
-          "50%": { transform: "scale(1.05)", boxShadow: "0 12px 36px rgba(169,129,70,0.55)" },
+          "0%, 100%": { transform: "scale(1)", boxShadow: "0 8px 24px rgba(201,162,77,0.40)" },
+          "50%": { transform: "scale(1.05)", boxShadow: "0 12px 36px rgba(201,162,77,0.55)" },
         },
       },
     },
