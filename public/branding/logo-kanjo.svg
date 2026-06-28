@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Kanjo Aïkido Isulanu">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#1c1a13"/>
+      <stop offset="70%" stop-color="#090805"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e2c488"/>
+      <stop offset="50%" stop-color="#c9a24d"/>
+      <stop offset="100%" stop-color="#a9803a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="232" fill="none" stroke="#c9a24d" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="256" cy="256" r="224" fill="none" stroke="#c9a24d" stroke-opacity="0.30" stroke-width="1"/>
+
+  <text x="256" y="138" text-anchor="middle"
+        font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+        font-size="33" font-weight="600" letter-spacing="11"
+        fill="#c9a24d" fill-opacity="0.92">KANJO AÏKIDO</text>
+
+  <!-- Kanji 寅 / 柮 empilés (police CJK système — placeholder en attendant le PNG d'origine) -->
+  <g font-family="'Shippori Mincho', 'Noto Serif CJK JP', 'Yu Mincho', serif" font-weight="700" fill="url(#gold)" text-anchor="middle">
+    <text x="256" y="248" font-size="120">寅</text>
+    <text x="256" y="356" font-size="120">柮</text>
+  </g>
+
+  <g stroke="#c9a24d" stroke-opacity="0.7" stroke-width="2">
+    <line x1="120" y1="404" x2="180" y2="404"/>
+    <line x1="332" y1="404" x2="392" y2="404"/>
+  </g>
+  <text x="256" y="412" text-anchor="middle"
+        font-family="'Cinzel', Georgia, serif"
+        font-size="34" font-weight="600" letter-spacing="9"
+        fill="#c9a24d">ISULANU</text>
+
+  <text x="256" y="446" text-anchor="middle"
+        font-family="'Cormorant Garamond', Georgia, serif"
+        font-size="25" font-style="italic"
+        fill="#bcb39f">Isula di Corsica</text>
+</svg>

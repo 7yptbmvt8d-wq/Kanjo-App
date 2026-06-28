@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "branding/logo-kanjo.png"],
+      includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "branding/logo-kanjo.svg"],
       manifest: {
         name: "Kanjo Aïkido Isulanu",
         short_name: "Kanjo Aïkido",
@@ -22,6 +22,9 @@ export default defineConfig({
         lang: "fr",
         categories: ["sports", "lifestyle"],
         icons: [
+          // Stopgap SVG icon (faithful placeholder). Remplacer/compléter par
+          // les PNG via `npm run generate-pwa-assets` une fois le logo fourni.
+          { src: "branding/logo-kanjo.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
           { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
           { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
           { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
