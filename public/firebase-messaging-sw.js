@@ -13,12 +13,12 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js
 importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: "TODO_FIREBASE_API_KEY",
+  apiKey: "AIzaSyDxVHxSqUNi2xdsFroVL1qON5a1RQVkq8s",
   authDomain: "kanjo-aikido.firebaseapp.com",
   projectId: "kanjo-aikido",
   storageBucket: "kanjo-aikido.firebasestorage.app",
-  messagingSenderId: "TODO_MESSAGING_SENDER_ID",
-  appId: "TODO_APP_ID",
+  messagingSenderId: "319041643134",
+  appId: "1:319041643134:web:a7b6a5ef7629df953e2e2f",
 });
 
 const messaging = firebase.messaging();
