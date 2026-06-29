@@ -185,24 +185,28 @@ function memberRow(licence, m) {
 }
 
 // Crée les onglets manquants (+ ligne d'entête) au premier write.
+// Idempotent et tolérant aux exécutions concurrentes : deux écritures de
+// membres rapprochées déclenchent deux instances en parallèle qui tentent
+// toutes deux de créer l'onglet — on ignore l'erreur "already exists".
 async function ensureTabs(sheets) {
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   const existing = new Set((meta.data.sheets || []).map((s) => s.properties.title));
-  const toCreate = TABS.filter((t) => !existing.has(t));
-  if (toCreate.length) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SHEET_ID,
-      requestBody: {
-        requests: toCreate.map((title) => ({ addSheet: { properties: { title } } })),
-      },
-    });
-    for (const title of toCreate) {
+  for (const title of TABS) {
+    if (existing.has(title)) continue;
+    try {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SHEET_ID,
+        requestBody: { requests: [{ addSheet: { properties: { title } } }] },
+      });
       await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID,
         range: `${title}!A1`,
         valueInputOption: "RAW",
         requestBody: { values: [SHEET_HEADER] },
       });
+    } catch (e) {
+      // Onglet créé entre-temps par une exécution concurrente — on ignore.
+      if (!String((e && e.message) || "").includes("already exists")) throw e;
     }
   }
 }
