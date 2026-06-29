@@ -325,7 +325,7 @@ function relativePastLabel(ts) {
   return new Date(ms).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-const LOGO_COSTA_VERDE = "/branding/logo-kanjo.svg";
+const LOGO_COSTA_VERDE = "/branding/logo-kanjo.png";
 
 // Timeline jalons — à compléter / corriger avec l'enseignant.
 const MILESTONES = [
