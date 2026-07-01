@@ -14,6 +14,7 @@ const STORAGE_KEY = "kanjo-aikido:prof";
 // existing author dropdowns keep working.
 const PROF_CODES = {
   "Sébastien": import.meta.env.VITE_PROF_CODE_SEBASTIEN || "",
+  "Jean-Charles": import.meta.env.VITE_PROF_CODE_JC || "",
 };
 
 export const profGateConfigured = Object.values(PROF_CODES).some(Boolean);

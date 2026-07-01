@@ -49,7 +49,7 @@ export const SEED_COURSES = [
 
 export const SEED_ANNOUNCEMENTS = [];
 
-export const PROFS = ["Sébastien"];
+export const PROFS = ["Sébastien", "Jean-Charles"];
 
 // Liste des profs identifiables dans la collection /members — sert à les
 // exclure du pointage et des classements (un prof n'est pas un adhérent
@@ -59,6 +59,7 @@ export const PROFS = ["Sébastien"];
 // d'un prof qui partagent le même nom.
 export const PROF_MEMBERS = [
   { firstName: "Sébastien", lastName: "De Raedt" },
+  { firstName: "Jean-Charles", lastName: "Lanusse" },
 ];
 
 export const ROLL_CALL_TARGETS = ["Adultes · Tous niveaux", "Armes · Bokken & Jō", "Enfants 7-12 ans", "Tout le club"];

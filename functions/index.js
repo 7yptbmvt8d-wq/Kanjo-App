@@ -56,6 +56,7 @@ const GRADE_LABEL = {
 // Doit rester aligné avec PROF_MEMBERS dans src/data/seed.js.
 const PROF_MEMBERS = [
   { firstName: "Sébastien", lastName: "De Raedt" },
+  { firstName: "Jean-Charles", lastName: "Lanusse" },
 ];
 const norm = (s) => (s || "").toLocaleLowerCase("fr").replace(/\s+/g, "");
 const PROF_KEYS = new Set(PROF_MEMBERS.map((p) => `${norm(p.firstName)}|${norm(p.lastName)}`));
