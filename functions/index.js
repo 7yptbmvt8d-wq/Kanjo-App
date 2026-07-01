@@ -52,6 +52,17 @@ const GRADE_LABEL = {
   godan: "Godan",
 };
 
+// Enseignants — exclus du fichier adhérents (on les retire de la sync).
+// Doit rester aligné avec PROF_MEMBERS dans src/data/seed.js.
+const PROF_MEMBERS = [
+  { firstName: "Sébastien", lastName: "De Raedt" },
+];
+const norm = (s) => (s || "").toLocaleLowerCase("fr").replace(/\s+/g, "");
+const PROF_KEYS = new Set(PROF_MEMBERS.map((p) => `${norm(p.firstName)}|${norm(p.lastName)}`));
+function isProfMember(m) {
+  return PROF_KEYS.has(`${norm(m && m.firstName)}|${norm(m && m.lastName)}`);
+}
+
 setGlobalOptions({ region: REGION });
 
 // ───────────────────────── 1. Push FCM ─────────────────────────
@@ -143,15 +154,30 @@ function getSheets() {
   return sheetsClientPromise;
 }
 
+const MOIS_FR = [
+  "janvier", "février", "mars", "avril", "mai", "juin",
+  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+];
+
+// Timestamp Firestore → date française "JJ/MM/AAAA".
 function tsToDate(v) {
   if (!v) return "";
   try {
     const d = typeof v.toDate === "function" ? v.toDate() : new Date(v);
     if (Number.isNaN(d.getTime())) return "";
-    return d.toISOString().slice(0, 10); // YYYY-MM-DD
+    const jj = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${jj}/${mm}/${d.getFullYear()}`;
   } catch {
     return "";
   }
+}
+
+// "YYYY-MM" → "mois AAAA" en français (ex. "mai 2015").
+function fmtBirth(birthYM) {
+  if (typeof birthYM !== "string" || !/^\d{4}-\d{2}$/.test(birthYM)) return "";
+  const [y, m] = birthYM.split("-").map(Number);
+  return MOIS_FR[m - 1] ? `${MOIS_FR[m - 1]} ${y}` : birthYM;
 }
 
 // "YYYY-MM" → âge en années (au mois près). null si absent/illisible.
@@ -177,19 +203,55 @@ function memberRow(licence, m) {
     m.lastName || "",
     GRADE_LABEL[m.grade] || m.grade || "",
     tsToDate(m.gradeObtainedAt),
-    m.birthYM || "",
+    fmtBirth(m.birthYM),
     Array.isArray(m.practiceLocations) ? m.practiceLocations.join(", ") : "",
     tsToDate(m.createdAt),
     tsToDate(m.leftAt),
   ];
 }
 
-// Crée les onglets manquants (+ ligne d'entête) au premier write.
+// Couleurs de l'entête (identité Kanjo : or sur encre sombre).
+const GOLD = { red: 0.788, green: 0.635, blue: 0.302 };
+const INK = { red: 0.051, green: 0.043, blue: 0.027 };
+
+// Applique la mise en forme "joli tableau" à un onglet : entête dorée,
+// gras, centrée, ligne figée, colonnes auto-ajustées. Idempotent.
+function styleRequests(sheetId) {
+  return [
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: SHEET_HEADER.length },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: GOLD,
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+            textFormat: { bold: true, foregroundColor: INK, fontSize: 10 },
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat)",
+      },
+    },
+    {
+      updateSheetProperties: {
+        properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+        fields: "gridProperties.frozenRowCount",
+      },
+    },
+    {
+      autoResizeDimensions: {
+        dimensions: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: SHEET_HEADER.length },
+      },
+    },
+  ];
+}
+
+// Crée les onglets manquants (+ entête) puis applique la mise en forme.
 // Idempotent et tolérant aux exécutions concurrentes : deux écritures de
 // membres rapprochées déclenchent deux instances en parallèle qui tentent
 // toutes deux de créer l'onglet — on ignore l'erreur "already exists".
 async function ensureTabs(sheets) {
-  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  let meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   const existing = new Set((meta.data.sheets || []).map((s) => s.properties.title));
   for (const title of TABS) {
     if (existing.has(title)) continue;
@@ -208,6 +270,15 @@ async function ensureTabs(sheets) {
       // Onglet créé entre-temps par une exécution concurrente — on ignore.
       if (!String((e && e.message) || "").includes("already exists")) throw e;
     }
+  }
+  // Mise en forme (relit les métadonnées pour couvrir les onglets neufs).
+  meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const requests = [];
+  for (const s of meta.data.sheets || []) {
+    if (TABS.includes(s.properties.title)) requests.push(...styleRequests(s.properties.sheetId));
+  }
+  if (requests.length) {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests } });
   }
 }
 
@@ -260,6 +331,14 @@ exports.syncMemberToSheet = onDocumentWritten(
     }
 
     const m = after.data() || {};
+
+    // Les enseignants ne figurent pas dans le fichier adhérents — on les
+    // retire s'ils y étaient et on s'arrête.
+    if (isProfMember(m)) {
+      await removeFromAllTabs(sheets, licence);
+      return;
+    }
+
     // On enlève d'abord l'éventuelle ligne existante (y compris si l'adhérent
     // a changé d'onglet : passage enfant→adulte, correction de naissance…),
     // puis on ré-insère dans le bon onglet.
