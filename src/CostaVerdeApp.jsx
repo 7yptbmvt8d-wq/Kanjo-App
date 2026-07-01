@@ -454,7 +454,7 @@ function CourseCard({ c, profMode, onProfChange }) {
           </div>
         )}
         <div className="flex items-center gap-2 mt-3">
-          <div className="w-[26px] h-[26px] rounded-full bg-pine text-cream text-[9.5px] font-extrabold flex items-center justify-center shrink-0">
+          <div className="w-[26px] h-[26px] rounded-full bg-pine text-paper text-[9.5px] font-extrabold flex items-center justify-center shrink-0">
             {initials}
           </div>
           {profMode ? (
@@ -509,7 +509,7 @@ function PresenceCard({ a, response, aggregate, allMembers, onRespond, profMode,
       a.pinned ? "border-gold/55 shadow-pinned" : "border-[rgba(34,30,24,0.07)]"
     }`}>
       <div className="flex items-center gap-2.5">
-        <div className="w-[30px] h-[30px] rounded-full bg-pine text-cream text-[10px] font-extrabold flex items-center justify-center shrink-0">
+        <div className="w-[30px] h-[30px] rounded-full bg-pine text-paper text-[10px] font-extrabold flex items-center justify-center shrink-0">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
@@ -534,7 +534,7 @@ function PresenceCard({ a, response, aggregate, allMembers, onRespond, profMode,
           onClick={() => onRespond(a.id, "present")}
           className={`flex items-center justify-center gap-1.5 text-[12.5px] font-semibold py-2.5 rounded-[12px] border transition-all active:scale-[0.98] ${
             response === "present"
-              ? "bg-pine text-cream border-pine shadow-card"
+              ? "bg-pine text-paper border-pine shadow-card"
               : "bg-paper text-ink-soft border-[rgba(34,30,24,0.12)]"
           }`}
         >
@@ -864,7 +864,7 @@ function ProgrammeContent({ g }) {
       )}
       {g.sections.map((s) => (
         <div key={s.title} className="rounded-[14px] overflow-hidden border border-[rgba(34,30,24,0.07)]">
-          <div className="bg-pine text-cream text-[11px] font-bold tracking-section uppercase px-3 py-2">
+          <div className="bg-pine text-paper text-[11px] font-bold tracking-section uppercase px-3 py-2">
             {s.title}
           </div>
           <div className="divide-y divide-[rgba(34,30,24,0.06)] bg-paper">
@@ -958,7 +958,7 @@ function GradesTab({
           className="mx-5 mt-5 w-[calc(100%-2.5rem)] flex items-center gap-3 text-left bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[18px] px-4 py-3.5 shadow-card transition-colors hover:border-pine/30"
         >
           <div className="w-10 h-10 rounded-full bg-pine flex items-center justify-center shrink-0">
-            <UserPlus size={17} className="text-gold-400" />
+            <UserPlus size={17} className="text-paper" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-serif text-[15px] font-semibold text-ink">
@@ -1111,7 +1111,7 @@ function GradesTab({
                   <div className="text-[11px] text-ink-muted">{BELT_JP[g.id]} · {g.belt}</div>
                 </div>
                 {isCurrent && (
-                  <span className="text-[10px] tracking-section uppercase bg-pine text-cream px-2.5 py-1 rounded-full font-bold shrink-0">
+                  <span className="text-[10px] tracking-section uppercase bg-pine text-paper px-2.5 py-1 rounded-full font-bold shrink-0">
                     Vous êtes ici
                   </span>
                 )}
@@ -1571,7 +1571,7 @@ export default function CostaVerdeApp() {
           onClick={handleProfToggle}
           className={`absolute top-[calc(env(safe-area-inset-top)+1rem)] right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             profMode
-              ? "bg-pine text-gold-400 shadow-card"
+              ? "bg-pine text-paper shadow-card"
               : "bg-paper-card text-ink-muted border border-[rgba(34,30,24,0.07)] hover:text-pine"
           }`}
           title={
@@ -1613,7 +1613,7 @@ export default function CostaVerdeApp() {
                     onClick={() => setLocation(loc)}
                     className={`flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-1.5 rounded-full border shrink-0 transition-colors ${
                       location === loc
-                        ? "bg-pine text-cream border-pine"
+                        ? "bg-pine text-paper border-pine"
                         : "bg-paper-card text-ink-muted border-[rgba(34,30,24,0.07)]"
                     }`}
                   >
@@ -1755,7 +1755,7 @@ export default function CostaVerdeApp() {
                   className="w-full mt-5 flex items-center gap-3 text-left bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[18px] px-4 py-3 shadow-card transition-colors hover:border-pine/30 disabled:opacity-60"
                 >
                   <div className="w-9 h-9 rounded-full bg-pine flex items-center justify-center shrink-0">
-                    <Bell size={16} className="text-gold-400" />
+                    <Bell size={16} className="text-paper" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-serif text-[14px] font-semibold text-ink">
@@ -1774,7 +1774,7 @@ export default function CostaVerdeApp() {
                       <div className="grid grid-cols-2 gap-2.5">
                         <button
                           onClick={() => setComposing(true)}
-                          className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-cream bg-pine rounded-[14px] py-3 shadow-card transition-transform active:scale-[0.98]"
+                          className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-paper bg-pine rounded-[14px] py-3 shadow-card transition-transform active:scale-[0.98]"
                         >
                           <Plus size={14} />
                           Annonce
@@ -1843,7 +1843,7 @@ export default function CostaVerdeApp() {
                         <button
                           onClick={launchRollCall}
                           disabled={publishing}
-                          className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+                          className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
                         >
                           <ClipboardCheck size={12} />
                           {publishing ? "Envoi…" : "Lancer l'appel"}
@@ -1894,7 +1894,7 @@ export default function CostaVerdeApp() {
                         <button
                           onClick={publish}
                           disabled={publishing || !draft.body.trim()}
-                          className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+                          className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-3.5 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
                         >
                           <Check size={12} />
                           {publishing ? "Envoi…" : "Publier"}
@@ -2195,7 +2195,7 @@ function ProfileModal({ initialLicence, initialFirstName, initialLastName, onSav
       >
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-pine flex items-center justify-center shrink-0">
-            <UserPlus size={17} className="text-gold-400" />
+            <UserPlus size={17} className="text-paper" />
           </div>
           <div className="flex-1">
             <div className="font-serif text-[17px] font-semibold text-ink leading-tight">
@@ -2276,7 +2276,7 @@ function ProfileModal({ initialLicence, initialFirstName, initialLastName, onSav
           <button
             type="submit"
             disabled={busy}
-            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Check size={14} />
             {busy ? "…" : found ? "S'identifier" : "Enregistrer"}
@@ -2353,7 +2353,7 @@ function AddMemberModal({ onSave, onClose }) {
       >
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-pine flex items-center justify-center shrink-0">
-            <UserPlus size={17} className="text-gold-400" />
+            <UserPlus size={17} className="text-paper" />
           </div>
           <div className="flex-1">
             <div className="font-serif text-[17px] font-semibold text-ink leading-tight">
@@ -2468,7 +2468,7 @@ function AddMemberModal({ onSave, onClose }) {
                     onClick={() => toggleLocation(loc)}
                     className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold rounded-lg px-2 py-2 border transition-colors ${
                       checked
-                        ? "bg-pine text-cream border-pine shadow-card"
+                        ? "bg-pine text-paper border-pine shadow-card"
                         : "bg-paper text-ink-muted border-[rgba(34,30,24,0.12)]"
                     }`}
                   >
@@ -2498,7 +2498,7 @@ function AddMemberModal({ onSave, onClose }) {
           <button
             type="submit"
             disabled={busy}
-            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Check size={14} />
             {busy ? "Création…" : "Ajouter"}
@@ -2740,7 +2740,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                   onClick={() => setLocationFilter(loc)}
                   className={`flex-1 flex items-center justify-center gap-1.5 text-[11.5px] font-semibold rounded-full px-3 py-1.5 transition-colors border ${
                     active
-                      ? "bg-pine text-cream border-pine shadow-card"
+                      ? "bg-pine text-paper border-pine shadow-card"
                       : "bg-paper-card text-ink-soft border-[rgba(34,30,24,0.12)]"
                   }`}
                 >
@@ -2922,7 +2922,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                         disabled={locked}
                         className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                           state === "present"
-                            ? "bg-pine text-cream"
+                            ? "bg-pine text-paper"
                             : "bg-paper border border-[rgba(34,30,24,0.12)] text-ink-muted"
                         } ${locked ? "cursor-not-allowed" : ""}`}
                         title="Présent"
@@ -2966,7 +2966,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
             type="button"
             onClick={submit}
             disabled={busy || locked}
-            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2.5 flex items-center gap-1.5 shadow-card disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2.5 flex items-center gap-1.5 shadow-card disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ClipboardList size={14} />
             {locked
@@ -3201,7 +3201,7 @@ function StageModal({ prof, onSave, onClose }) {
             type="button"
             onClick={submit}
             disabled={busy}
-            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Award size={14} />
             {busy ? "Enregistrement…" : "Annoncer"}
@@ -3369,7 +3369,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
                   onClick={() => toggleLocation(loc)}
                   className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold rounded-lg px-2 py-2 border transition-colors ${
                     checked
-                      ? "bg-pine text-cream border-pine shadow-card"
+                      ? "bg-pine text-paper border-pine shadow-card"
                       : "bg-paper-card text-ink-muted border-[rgba(34,30,24,0.12)]"
                   }`}
                 >
@@ -3430,7 +3430,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
                 >
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center font-serif text-[13px] shrink-0 ${
-                      checked ? "bg-pine text-cream" : "bg-paper text-ink-muted border border-[rgba(34,30,24,0.07)]"
+                      checked ? "bg-pine text-paper" : "bg-paper text-ink-muted border border-[rgba(34,30,24,0.07)]"
                     }`}
                   >
                     {MANUAL_KANJI[id]}
@@ -3479,7 +3479,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
             type="button"
             onClick={submit}
             disabled={busy || !dirty}
-            className="text-[12.5px] font-semibold text-cream bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-paper bg-pine rounded-lg px-4 py-2 flex items-center gap-1.5 shadow-card disabled:opacity-50"
           >
             <Check size={14} />
             {busy ? "Enregistrement…" : "Enregistrer"}
@@ -3994,7 +3994,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                 onClick={() => setLocationFilter(opt.id)}
                 className={`text-[11.5px] font-semibold rounded-full px-3 py-1.5 transition-colors border ${
                   active
-                    ? "bg-pine text-cream border-pine shadow-card"
+                    ? "bg-pine text-paper border-pine shadow-card"
                     : "bg-paper-card text-ink-soft border-[rgba(34,30,24,0.12)] hover:border-pine/30"
                 }`}
               >
@@ -4288,7 +4288,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                   key={m.id}
                   className="bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[14px] px-4 py-2.5 flex items-center gap-3"
                 >
-                  <div className="w-[26px] h-[26px] rounded-full bg-pine text-cream text-[10px] font-extrabold flex items-center justify-center shrink-0">
+                  <div className="w-[26px] h-[26px] rounded-full bg-pine text-paper text-[10px] font-extrabold flex items-center justify-center shrink-0">
                     {profInitials(`${m.firstName} ${m.lastName}`)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -4385,7 +4385,7 @@ function CelebrationModal({ event, memberName, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="mt-6 w-full text-[12.5px] font-semibold text-cream bg-pine rounded-full px-4 py-2.5 shadow-card"
+            className="mt-6 w-full text-[12.5px] font-semibold text-paper bg-pine rounded-full px-4 py-2.5 shadow-card"
           >
             Continuer
           </button>
@@ -4527,7 +4527,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
           className="w-full flex items-center gap-3 text-left bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[18px] px-4 py-3.5 shadow-card transition-colors hover:border-pine/30"
         >
           <div className="w-10 h-10 rounded-full bg-pine flex items-center justify-center shrink-0">
-            <UserPlus size={17} className="text-gold-400" />
+            <UserPlus size={17} className="text-paper" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-serif text-[15px] font-semibold text-ink">
@@ -5023,7 +5023,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
                     }}
                     className={`mt-3 w-full rounded-[12px] px-3 py-2 text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-colors ${
                       (s.attendeeIds || []).includes(member.id)
-                        ? "bg-pine text-cream shadow-card"
+                        ? "bg-pine text-paper shadow-card"
                         : "bg-paper border border-gold/40 text-gold"
                     }`}
                   >
@@ -5395,7 +5395,7 @@ function MembersTab({ members, onEdit, onAdd }) {
         <button
           type="button"
           onClick={onAdd}
-          className="shrink-0 flex items-center gap-1.5 text-[12.5px] font-semibold text-cream bg-pine rounded-full pl-3 pr-4 py-2 shadow-card transition-transform active:scale-[0.98]"
+          className="shrink-0 flex items-center gap-1.5 text-[12.5px] font-semibold text-paper bg-pine rounded-full pl-3 pr-4 py-2 shadow-card transition-transform active:scale-[0.98]"
           title="Ajouter un adhérent"
         >
           <UserPlus size={14} />

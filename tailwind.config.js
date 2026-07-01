@@ -30,9 +30,13 @@ export default {
           body: "#bcb39f",
           body2: "#aaa18d",
         },
-        // Surfaces d'accent sombres (héros, dégradés, tab bar).
+        // `pine` = couleur d'accent PRIMAIRE (boutons, éléments sélectionnés,
+        // barres de progression). Sur le thème sombre Kanjo, c'est l'OR : les
+        // éléments interactifs sont dorés à texte sombre (fort contraste).
+        // `dark`/`mid`/`tab` restent sombres pour les fonds (héros, login,
+        // tab bar) via bg-pine-dark / bg-hero-pine / bg-tabbar-pine.
         pine: {
-          DEFAULT: "#15120b",
+          DEFAULT: "#c9a24d",
           dark: "#090805",
           mid: "#1c1a13",
           tab: "#0d0b07",
