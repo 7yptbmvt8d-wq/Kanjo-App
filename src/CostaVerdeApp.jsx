@@ -147,12 +147,13 @@ function isProfMember(member) {
   return PROF_MEMBER_KEYS.has(`${norm(member?.firstName)}|${norm(member?.lastName)}`);
 }
 
-// Les enseignants disposent de la totalité des badges (attribution en bloc).
-const ALL_BADGE_IDS = BADGES.map((b) => b.id);
-// forceBadges effectif pour un membre : tous les badges si c'est un prof,
-// sinon les éventuels forceBadges posés sur sa fiche.
+// Badges hors grades. Les badges Kyū/Dan NE sont PAS forcés : ils ne
+// s'obtiennent que si le grade est réellement détenu (calculés via gradeIdx).
+const NON_GRADE_BADGE_IDS = BADGES.filter((b) => b.cat !== "kyu" && b.cat !== "dan").map((b) => b.id);
+// forceBadges effectif : un prof obtient tous les badges SAUF ceux liés au
+// grade ; sinon les éventuels forceBadges posés sur sa fiche.
 function forceBadgesFor(member) {
-  if (isProfMember(member)) return ALL_BADGE_IDS;
+  if (isProfMember(member)) return NON_GRADE_BADGE_IDS;
   return Array.isArray(member?.forceBadges) ? member.forceBadges : [];
 }
 
