@@ -2002,6 +2002,30 @@ export default function CostaVerdeApp() {
           )}
         </div>
 
+        {/* Bannière d'incitation aux notifications — visible sur tous les
+            onglets tant que le membre n'a pas décidé (autorisé / refusé).
+            Disparaît d'elle-même une fois le choix fait. */}
+        {push.canPrompt && (
+          <button
+            type="button"
+            onClick={push.enable}
+            disabled={push.busy}
+            className="shrink-0 flex items-center gap-3 px-5 py-3 bg-gold/10 border-t border-gold/30 text-left active:bg-gold/15 transition-colors disabled:opacity-60"
+          >
+            <span className="shrink-0 w-9 h-9 rounded-full bg-pine flex items-center justify-center">
+              <Bell size={17} className="text-paper" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-bold text-ink leading-tight">
+                {push.busy ? "Activation…" : "Active les notifications"}
+              </span>
+              <span className="block text-[11.5px] text-ink-soft leading-snug mt-0.5">
+                Sois prévenu des appels et annonces du dojo.
+              </span>
+            </span>
+          </button>
+        )}
+
         {/* Bottom nav — dark pine gradient + gold accent. shrink-0 +
             max-w pour ne pas s'étendre démesurément sur tablette /
             desktop, sinon les onglets se retrouvent espacés à
