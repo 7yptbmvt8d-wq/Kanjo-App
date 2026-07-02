@@ -147,6 +147,15 @@ function isProfMember(member) {
   return PROF_MEMBER_KEYS.has(`${norm(member?.firstName)}|${norm(member?.lastName)}`);
 }
 
+// Les enseignants disposent de la totalité des badges (attribution en bloc).
+const ALL_BADGE_IDS = BADGES.map((b) => b.id);
+// forceBadges effectif pour un membre : tous les badges si c'est un prof,
+// sinon les éventuels forceBadges posés sur sa fiche.
+function forceBadgesFor(member) {
+  if (isProfMember(member)) return ALL_BADGE_IDS;
+  return Array.isArray(member?.forceBadges) ? member.forceBadges : [];
+}
+
 function formatBirthYM(birthYM) {
   if (typeof birthYM !== "string" || !/^\d{4}-\d{2}$/.test(birthYM)) return null;
   const [y, m] = birthYM.split("-").map(Number);
@@ -4446,7 +4455,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
       gradeIdx, hakamaIdx,
       stageAttendance: sAtt,
       manualBadges: Array.isArray(member.manualBadges) ? member.manualBadges : [],
-      forceBadges: Array.isArray(member.forceBadges) ? member.forceBadges : [],
+      forceBadges: forceBadgesFor(member),
     });
     const earnedNow = allBadges.filter((b) => b.earned).map((b) => b.id);
     const labelById = Object.fromEntries(
@@ -4664,7 +4673,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
     hakamaIdx,
     stageAttendance,
     manualBadges: Array.isArray(member.manualBadges) ? member.manualBadges : [],
-    forceBadges: Array.isArray(member.forceBadges) ? member.forceBadges : [],
+    forceBadges: forceBadgesFor(member),
   });
   const earnedCount = badges.filter((b) => b.earned).length;
 
