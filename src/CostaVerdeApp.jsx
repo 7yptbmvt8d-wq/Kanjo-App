@@ -986,7 +986,7 @@ function GradesTab({
       <div className="mx-5 mt-[22px] rounded-[24px] bg-hero-pine text-cream p-6 relative overflow-hidden shadow-heroDark">
         <div className="flex items-center gap-[14px]">
           <div
-            className="w-[14px] h-[54px] rounded-[5px] shadow-[0_0_0_1px_rgba(255,255,255,0.15)] shrink-0"
+            className="w-[14px] h-[54px] rounded-[5px] shadow-[0_0_0_1.5px_rgba(241,232,210,0.5)] shrink-0"
             style={{ backgroundColor: BELT_COLOR[current.id] }}
           />
           <div className="min-w-0 flex-1">
@@ -1078,7 +1078,7 @@ function GradesTab({
                   className="flex items-center gap-[14px] bg-paper-card/60 border border-[rgba(34,30,24,0.05)] rounded-[14px] px-4 py-2.5"
                 >
                   <div
-                    className="w-[24px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                    className="w-[24px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                     style={{ backgroundColor: BELT_COLOR[h.grade] }}
                   />
                   <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
@@ -1113,7 +1113,7 @@ function GradesTab({
                 }`}
               >
                 <div
-                  className="w-[34px] h-[14px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                  className="w-[34px] h-[14px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                   style={{ backgroundColor: BELT_COLOR[g.id] }}
                 />
                 <div className="flex-1 min-w-0">
@@ -1615,7 +1615,8 @@ export default function CostaVerdeApp() {
                 </div>
               </div>
 
-              {/* Location selector */}
+              {/* Location selector — masqué s'il n'y a qu'un seul lieu. */}
+              {LOCATIONS.length > 1 && (
               <div className="flex gap-2 mt-5 overflow-x-auto scrollbar-none -mx-1 px-1">
                 {LOCATIONS.map((loc) => (
                   <button
@@ -1632,6 +1633,7 @@ export default function CostaVerdeApp() {
                   </button>
                 ))}
               </div>
+              )}
 
               {/* Prochain cours hero */}
               {nextCourseSlot ? (
@@ -2764,6 +2766,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
 
           {/* Sélecteur de lieu — on pointe soit Santa Maria soit Vescovato,
               jamais les deux en même temps. */}
+          {LOCATIONS.length > 1 && (
           <div className="mt-3 flex gap-1.5">
             {LOCATIONS.map((loc) => {
               const active = locationFilter === loc;
@@ -2784,6 +2787,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
               );
             })}
           </div>
+          )}
 
           {/* Cours selector — filtré par le lieu choisi au-dessus. */}
           <label className="block mt-3">
@@ -2938,7 +2942,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                     } ${locked ? "opacity-90" : ""}`}
                   >
                     <div
-                      className="w-[22px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                      className="w-[22px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                       style={{ backgroundColor: BELT_COLOR[m.grade] || "#FFFFFF" }}
                     />
                     <div className="flex-1 min-w-0">
@@ -3432,7 +3436,7 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
                 }`}
               >
                 <div
-                  className="w-[30px] h-[12px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                  className="w-[30px] h-[12px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                   style={{ backgroundColor: BELT_COLOR[g.id] }}
                 />
                 <div className="flex-1 min-w-0">
@@ -3638,7 +3642,7 @@ function Top5Block({ label, rows }) {
                   {i + 1}
                 </div>
                 <div
-                  className="w-[22px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                  className="w-[22px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                   style={{ backgroundColor: BELT_COLOR[m.grade] || "#FFFFFF" }}
                 />
                 <div className="flex-1 min-w-0">
@@ -3744,7 +3748,7 @@ function GradeBreakdown({ label, total, counts }) {
           return (
             <div key={g.id} className="flex items-center gap-3 py-1.5 px-1">
               <div
-                className="w-[26px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                className="w-[26px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                 style={{ backgroundColor: BELT_COLOR[g.id] }}
               />
               <div className="text-[12.5px] text-ink w-[90px] shrink-0">{g.label}</div>
@@ -4290,7 +4294,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                 className="bg-paper-card border border-gold/40 rounded-[14px] px-4 py-3 flex items-center gap-3 shadow-card"
               >
                 <div
-                  className="w-[24px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                  className="w-[24px] h-[10px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                   style={{ backgroundColor: BELT_COLOR[m.grade] }}
                 />
                 <div className="flex-1 min-w-0">
@@ -4402,7 +4406,7 @@ function CelebrationModal({ event, memberName, onClose }) {
                 </div>
               ) : (
                 <div
-                  className="w-[60px] h-[24px] rounded ring-1 ring-[rgba(34,30,24,0.18)]"
+                  className="w-[60px] h-[24px] rounded ring-1 ring-[rgba(241,232,210,0.45)]"
                   style={{ backgroundColor: BELT_COLOR[event.grade.id] }}
                 />
               )}
@@ -4736,7 +4740,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
       <div className="mx-5 mt-5 rounded-[20px] bg-hero-pine text-cream p-5 relative overflow-hidden shadow-heroDark">
         <div className="flex items-center gap-3">
           <div
-            className="w-[12px] h-[46px] rounded-[5px] shadow-[0_0_0_1px_rgba(255,255,255,0.15)] shrink-0"
+            className="w-[12px] h-[46px] rounded-[5px] shadow-[0_0_0_1.5px_rgba(241,232,210,0.5)] shrink-0"
             style={{ backgroundColor: BELT_COLOR[grade.id] }}
           />
           <div className="flex-1 min-w-0">
@@ -4793,7 +4797,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
           >
             <div className="flex items-center gap-3">
               <div
-                className="w-[12px] h-[36px] rounded-[5px] shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+                className="w-[12px] h-[36px] rounded-[5px] shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
                 style={{ backgroundColor: BELT_COLOR[next.id] }}
               />
               <div className="flex-1 min-w-0">
@@ -5331,7 +5335,7 @@ function MemberCard({ m, onEdit }) {
     >
       <div className="flex items-center gap-3.5">
         <div
-          className="w-[30px] h-[12px] rounded shrink-0 ring-1 ring-[rgba(34,30,24,0.12)]"
+          className="w-[30px] h-[12px] rounded shrink-0 ring-1 ring-[rgba(241,232,210,0.45)]"
           style={{ backgroundColor: BELT_COLOR[m.grade] || "#FFFFFF" }}
         />
         <div className="flex-1 min-w-0">
