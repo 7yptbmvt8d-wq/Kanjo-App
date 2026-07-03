@@ -7,43 +7,31 @@
 
 
 export const LOCATIONS = ["Vescovato"];
-export const DAYS = ["Mercredi", "Jeudi", "Samedi"];
+export const DAYS = ["Mercredi", "Vendredi"];
 
-// Créneaux repris de la maquette de design Kanjo (exemples) — à confirmer
-// avec les horaires réels du dojo de Vescovato.
+// Créneaux réels du dojo de Vescovato.
 export const SEED_COURSES = [
   {
     id: 1,
     day: "Mercredi",
-    start: "17:00",
-    end: "18:00",
-    title: "Enfants 7-12 ans",
-    prof: "Sébastien",
-    location: "Vescovato",
-    status: "normal",
-    baseline: 11,
-  },
-  {
-    id: 2,
-    day: "Jeudi",
-    start: "19:00",
-    end: "21:00",
-    title: "Adultes · Tous niveaux",
-    prof: "Sébastien",
-    location: "Vescovato",
-    status: "normal",
-    baseline: 14,
-  },
-  {
-    id: 3,
-    day: "Samedi",
-    start: "10:00",
-    end: "12:00",
-    title: "Armes · Bokken & Jō",
+    start: "14:30",
+    end: "16:30",
+    title: "Jeunes (12-16 ans)",
     prof: "Sébastien",
     location: "Vescovato",
     status: "normal",
     baseline: 8,
+  },
+  {
+    id: 2,
+    day: "Vendredi",
+    start: "09:30",
+    end: "11:00",
+    title: "Sénior - grand débutant",
+    prof: "Jean-Charles",
+    location: "Vescovato",
+    status: "normal",
+    baseline: 6,
   },
 ];
 
@@ -62,7 +50,7 @@ export const PROF_MEMBERS = [
   { firstName: "Jean-Charles", lastName: "Lanusse" },
 ];
 
-export const ROLL_CALL_TARGETS = ["Adultes · Tous niveaux", "Armes · Bokken & Jō", "Enfants 7-12 ans", "Tout le club"];
+export const ROLL_CALL_TARGETS = ["Jeunes (12-16 ans)", "Sénior - grand débutant", "Tout le club"];
 
 // Esprit & histoire du Kanjo Aïkido Isulanu (à valider avec l'enseignant).
 

@@ -1829,16 +1829,18 @@ export default function CostaVerdeApp() {
                           {ROLL_CALL_TARGETS.map((t) => <option key={t}>{t}</option>)}
                         </select>
                       </div>
-                      <select
-                        value={rollCallLocation}
-                        onChange={(e) => setRollCallLocation(e.target.value)}
-                        className="text-[12.5px] border border-[rgba(34,30,24,0.12)] rounded-lg px-2.5 py-2 w-full bg-paper focus:outline-none focus:border-pine"
-                      >
-                        <option value="Tout le club">Tous les lieux</option>
-                        {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
-                      </select>
+                      {LOCATIONS.length > 1 && (
+                        <select
+                          value={rollCallLocation}
+                          onChange={(e) => setRollCallLocation(e.target.value)}
+                          className="text-[12.5px] border border-[rgba(34,30,24,0.12)] rounded-lg px-2.5 py-2 w-full bg-paper focus:outline-none focus:border-pine"
+                        >
+                          <option value="Tout le club">Tous les lieux</option>
+                          {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
+                        </select>
+                      )}
                       <div className="text-[11.5px] text-ink-muted">
-                        L'appel n'est envoyé qu'aux adhérents concernés (catégorie + lieu de pratique).
+                        L'appel n'est envoyé qu'aux adhérents concernés (catégorie{LOCATIONS.length > 1 ? " + lieu de pratique" : ""}).
                       </div>
                       {publishError && (
                         <div className="text-[11.5px] text-vermillion-500 bg-vermillion-50 border border-vermillion-200 rounded-lg px-2.5 py-1.5">
@@ -1877,10 +1879,7 @@ export default function CostaVerdeApp() {
                           onChange={(e) => setDraft({ ...draft, target: e.target.value })}
                           className="text-[12.5px] border border-[rgba(34,30,24,0.12)] rounded-lg px-2.5 py-2 flex-1 bg-paper focus:outline-none focus:border-pine"
                         >
-                          <option>Tout le club</option>
-                          <option>Aïkido ados</option>
-                          <option>Self-défense</option>
-                          <option>Séniors débutants</option>
+                          {ROLL_CALL_TARGETS.map((t) => <option key={t}>{t}</option>)}
                         </select>
                       </div>
                       <textarea
