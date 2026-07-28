@@ -1,9 +1,9 @@
 // Pure data used as Firestore seed in production and as the in-memory
 // fallback when Firebase environment variables are not yet configured.
-// LOCATIONS / DAYS / PROFS / ROLL_CALL_TARGETS / HISTORY / DOJO_INFO /
-// FEES / LINKS / GRADES are reference content that lives in code; only
-// SEED_COURSES and SEED_ANNOUNCEMENTS are mirrored into Firestore so the
-// schedule and announcements can be edited without a redeploy.
+// LOCATIONS / DAYS / PROFS / PROF_MEMBERS / ROLL_CALL_TARGETS / DOJO_INFO /
+// GRADES are reference content that lives in code; only SEED_COURSES and
+// SEED_ANNOUNCEMENTS are mirrored into Firestore so the schedule and
+// announcements can be edited without a redeploy.
 
 
 export const LOCATIONS = ["Vescovato"];
@@ -52,34 +52,12 @@ export const PROF_MEMBERS = [
 
 export const ROLL_CALL_TARGETS = ["Jeunes (12-16 ans)", "Sénior - grand débutant", "Tout le club"];
 
-// Esprit & histoire du Kanjo Aïkido Isulanu (à valider avec l'enseignant).
-
-export const HISTORY = [
-  "L'Aïkido a été fondé au Japon dans les années 1930 par Morihei Ueshiba, O Sensei. Plutôt qu'un affrontement, il propose de canaliser l'énergie d'une attaque pour la rediriger — un art martial sans compétition, tourné vers le développement personnel.",
-  "Nobuyoshi Tamura, élève proche d'O Sensei, a implanté l'Aïkido en France à partir de 1964 et a participé à la création de la FFAB, structurant la pédagogie, les examens et les stages encore en usage aujourd'hui.",
-  "En 2009, Tamura Senseï choisit le nom « Kanjo » — 感情, tendre la main à l'autre pour avancer ensemble. Le Kanjo Aïkido Isulanu fait vivre cet esprit en Corse : un dojo ouvert à tous, sans esprit de compétition, affilié FFAB et reconnu par l'Aïkikaï de Tokyo.",
-];
-
+// Nom du dojo — affiché dans la carte « prochain cours » du planning.
+// (Le reste des infos club — histoire, adresse, tarifs, liens — a été
+// retiré : aucun écran ne les affiche dans cette version.)
 export const DOJO_INFO = {
   name: "Dojo Kanjo Aïkido Isulanu",
-  address: "Vescovato (Haute-Corse)", // TODO: adresse précise
-  phone: "", // TODO: téléphone du club
-  contact: "Sébastien De Raedt (enseignant)",
-  trial: "2 cours d'essai gratuits, sans engagement",
-  medical: "Certificat médical obligatoire dès le début de la saison",
 };
-
-// TODO: confirmer la grille tarifaire réelle du club.
-export const FEES = [
-  { label: "Enfants (7–12 ans)", amount: "195 €", note: "Pass'Sport accepté" },
-  { label: "Ados / Adultes", amount: "255 €" },
-  { label: "Tarif famille (1 adulte + 1 enfant)", amount: "315 €" },
-];
-
-// TODO: renseigner les réseaux sociaux réels du Kanjo Aïkido Isulanu.
-export const LINKS = [
-  { label: "FFAB", url: "https://www.ffabaikido.fr/fr/" },
-];
 
 // Fiches de progression — Kanjo Aïkido Isulanu / FFAB
 export const GRADES = [

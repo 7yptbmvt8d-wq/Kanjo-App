@@ -45,7 +45,6 @@ import {
   LOCATIONS,
   PROFS,
   ROLL_CALL_TARGETS,
-  HISTORY,
   DOJO_INFO,
   GRADES,
   PROF_MEMBERS,
@@ -336,25 +335,6 @@ function relativePastLabel(ts) {
 }
 
 const LOGO_COSTA_VERDE = "/branding/logo-kanjo.png";
-
-// Timeline jalons — à compléter / corriger avec l'enseignant.
-const MILESTONES = [
-  {
-    year: "2009",
-    t: "L'esprit « Kanjo »",
-    d: "Tamura Senseï choisit le nom « Kanjo » (感情) : tendre la main à l'autre pour avancer ensemble.",
-  },
-  {
-    year: "Depuis",
-    t: "Affiliation FFAB",
-    d: "Le club est reconnu par la Fédération Française d'Aïkido et de Budo et par l'Aïkikaï de Tokyo.",
-  },
-  {
-    year: "Vescovato",
-    t: "Le dojo en Corse",
-    d: "Le Kanjo Aïkido Isulanu fait vivre cet esprit sur les tatamis de Vescovato — ouvert à tous, sans compétition.",
-  },
-];
 
 // ---- Visual helpers ----
 
