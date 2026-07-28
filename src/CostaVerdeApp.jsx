@@ -116,6 +116,18 @@ function formatObtained(timestamp) {
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
+// Détection iPhone/iPad + app installée (mode standalone). Sur iOS, les
+// notifications push ne sont possibles QUE si l'app est ajoutée à l'écran
+// d'accueil (iOS 16.4+) — d'où l'encart d'aide affiché dans Safari.
+const IS_IOS =
+  typeof navigator !== "undefined" &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+const IS_STANDALONE =
+  typeof window !== "undefined" &&
+  ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+    window.navigator.standalone === true);
+
 // Birth month/year stored as "YYYY-MM" — what <input type="month"> emits.
 // Threshold chosen to mirror the club's own teaching split: "Enfants 6-12 ans"
 // vs. "Ados & Adultes" — kids switch to the adult group at 13.
@@ -1213,6 +1225,15 @@ export default function CostaVerdeApp() {
   }
 
   const push = usePush();
+  // Encart iPhone "installer l'app" — masqué une fois fermé (persistant).
+  const [iosHintDismissed, setIosHintDismissed] = useState(() => {
+    try { return localStorage.getItem("kanjo-aikido:ios-hint") === "1"; } catch { return false; }
+  });
+  const dismissIosHint = () => {
+    setIosHintDismissed(true);
+    try { localStorage.setItem("kanjo-aikido:ios-hint", "1"); } catch {}
+  };
+  const showIosInstallHint = IS_IOS && !IS_STANDALONE && !iosHintDismissed;
 
   // Adhérent profile — licence number persists locally, the rest comes from
   // Firestore. `member` is null while loading or when the licence has no
@@ -1982,6 +2003,35 @@ export default function CostaVerdeApp() {
             />
           )}
         </div>
+
+        {/* Encart iPhone — sur iOS, les notifications exigent d'installer
+            l'app sur l'écran d'accueil d'abord. Affiché dans Safari (non
+            installé), fermable. */}
+        {showIosInstallHint && (
+          <div className="shrink-0 flex items-start gap-3 px-5 py-3 bg-gold/10 border-t border-gold/30">
+            <span className="shrink-0 w-9 h-9 rounded-full bg-pine flex items-center justify-center">
+              <Bell size={17} className="text-paper" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-bold text-ink leading-tight">
+                Installe l'app pour les notifications
+              </div>
+              <div className="text-[11.5px] text-ink-soft leading-snug mt-0.5">
+                Sur iPhone : touche <strong>Partager</strong> en bas de Safari, puis
+                {" "}<strong>« Sur l'écran d'accueil »</strong>. Ouvre ensuite l'app
+                depuis son icône pour activer les notifications.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={dismissIosHint}
+              className="shrink-0 w-6 h-6 rounded-full bg-cream/20 flex items-center justify-center"
+              title="Fermer"
+            >
+              <X size={11} className="text-ink-soft" />
+            </button>
+          </div>
+        )}
 
         {/* Bannière d'incitation aux notifications — visible sur tous les
             onglets tant que le membre n'a pas décidé (autorisé / refusé).
