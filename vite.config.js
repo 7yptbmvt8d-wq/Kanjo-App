@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon-48.png", "apple-touch-icon-180x180.png", "branding/logo-kanjo.png"],
+      includeAssets: ["favicon-48.png", "apple-touch-icon-180x180.png"],
       manifest: {
         name: "Kanjo Aïkido Isulanu",
         short_name: "Kanjo Aïkido",
@@ -36,6 +36,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}"],
+        // Le logo source 2048² (1,7 Mo) n'est jamais affiché dans l'app
+        // (seules les icônes PWA dérivées le sont) — inutile de l'alourdir
+        // le précache / l'installation du service worker.
+        globIgnores: ["**/branding/logo-kanjo.png"],
       },
       devOptions: {
         enabled: true,

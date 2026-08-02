@@ -7,6 +7,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  limit,
   serverTimestamp,
   setDoc,
   doc,
@@ -239,9 +240,9 @@ export function useAttendanceSessions(limitN = 200) {
   useEffect(() => {
     if (!firebaseEnabled) return undefined;
     return onSnapshot(
-      query(collection(db, "attendance"), orderBy("date", "desc")),
+      query(collection(db, "attendance"), orderBy("date", "desc"), limit(limitN)),
       (snap) => {
-        const docs = snap.docs.slice(0, limitN).map((d) => ({ id: d.id, ...d.data() }));
+        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setList(docs);
       },
       (err) => console.error("attendance snapshot error:", err),
@@ -304,9 +305,9 @@ export function useStages(limitN = 200) {
   useEffect(() => {
     if (!firebaseEnabled) return undefined;
     return onSnapshot(
-      query(collection(db, "stages"), orderBy("date", "desc")),
+      query(collection(db, "stages"), orderBy("date", "desc"), limit(limitN)),
       (snap) => {
-        const docs = snap.docs.slice(0, limitN).map((d) => ({ id: d.id, ...d.data() }));
+        const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setList(docs);
       },
       (err) => console.error("stages snapshot error:", err),
