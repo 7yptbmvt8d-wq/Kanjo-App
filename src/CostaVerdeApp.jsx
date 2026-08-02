@@ -3696,7 +3696,12 @@ function Top5Block({ label, rows }) {
 }
 
 function AbsentsBlock({ live, adultes, enfants }) {
-  const labels = ["15 jours", "1 mois", "2 mois"];
+  const fmtDuration = (o) => {
+    if (!o.everSeen) return "jamais venu";
+    if (o.days >= 60) return `depuis ${Math.round(o.days / 30)} mois`;
+    if (o.days >= 30) return "depuis 1 mois";
+    return `depuis ${o.days} j`;
+  };
   return (
     <div
       className={`mx-5 mt-3 bg-paper-card rounded-[16px] p-4 ${
@@ -3707,41 +3712,48 @@ function AbsentsBlock({ live, adultes, enfants }) {
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="text-[11px] font-bold tracking-section text-ink-soft uppercase">
-          Élèves absents depuis…
+          Élèves absents (15 j et +)
         </div>
         <div className="flex-1 h-px hairline" />
       </div>
-      {[
-        { name: "Adultes", values: adultes },
-        { name: "Enfants", values: enfants },
-      ].map(({ name, values }) => (
-        <div key={name} className="mb-3 last:mb-0">
-          <div className="text-[10.5px] font-bold tracking-section text-ink-muted uppercase mb-1.5 px-1">
-            {name}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {values.map((n, i) => (
-              <div
-                key={labels[i]}
-                className="rounded-[12px] border border-[rgba(34,30,24,0.07)] bg-paper px-3 py-2.5 text-center"
-              >
-                <div
-                  className={`font-serif text-[22px] font-semibold tabular-nums leading-none ${
-                    live ? (n > 0 ? "text-vermillion-500" : "text-pine") : "text-ink-muted"
-                  }`}
-                >
-                  {live ? n : "—"}
-                </div>
-                <div className="text-[10.5px] text-ink-muted tracking-wide mt-1">{labels[i]}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-      {!live && (
+      {!live ? (
         <div className="text-[11px] text-ink-muted italic leading-snug">
           Disponible une fois le pointage en place.
         </div>
+      ) : (
+        [
+          { name: "Adultes", list: adultes },
+          { name: "Enfants", list: enfants },
+        ].map(({ name, list }) => (
+          <div key={name} className="mb-3 last:mb-0">
+            <div className="text-[10.5px] font-bold tracking-section text-ink-muted uppercase mb-1.5 px-1">
+              {name}
+            </div>
+            {list.length === 0 ? (
+              <div className="text-[11.5px] text-ink-muted italic px-1 py-1">
+                Personne — tout le monde est venu récemment. 🎉
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {list.map((o) => (
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between gap-2 rounded-[10px] border border-[rgba(34,30,24,0.07)] bg-paper px-3 py-2"
+                  >
+                    <div className="text-[13px] font-semibold text-ink truncate">{o.name}</div>
+                    <div
+                      className={`text-[11px] font-bold tabular-nums shrink-0 ${
+                        !o.everSeen || o.days >= 30 ? "text-vermillion-500" : "text-ink-muted"
+                      }`}
+                    >
+                      {fmtDuration(o)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))
       )}
     </div>
   );
@@ -3945,22 +3957,32 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   const top5Adultes = top5ByCat("adulte");
   const top5Enfants = top5ByCat("enfant");
 
-  // Absents depuis X jours, par catégorie. Les membres inscrits trop
-  // récemment (createdAt > cutoff) sont exclus pour ne pas créer de faux
-  // absents.
-  function countAbsentSince(days, cat) {
-    const cutoff = now - days * ONE_DAY;
-    let n = 0;
+  // Élèves absents (pas vus depuis ≥ 15 jours), NOMINATIF. Les inscrits
+  // trop récents (createdAt > cutoff) sont exclus pour éviter les faux
+  // absents. Un membre jamais pointé compte depuis son inscription
+  // ("jamais venu"). Trié du plus longtemps absent au plus récent.
+  const ABSENCE_MIN_DAYS = 15;
+  function absentListFor(cat) {
+    const cutoff = now - ABSENCE_MIN_DAYS * ONE_DAY;
+    const out = [];
     for (const st of memberStats.values()) {
       if (ageCategory(st.member.birthYM) !== cat) continue;
       const createdMs = timestampMillis(st.member.createdAt);
       if (createdMs > cutoff) continue;
-      if (!st.lastSeen || st.lastSeen < cutoff) n++;
+      const ref = st.lastSeen || createdMs;
+      if (ref >= cutoff) continue;
+      const name = `${st.member.firstName || ""} ${st.member.lastName || ""}`.trim();
+      out.push({
+        id: st.member.id,
+        name: name || `Licence ${st.member.id}`,
+        days: Math.max(0, Math.floor((now - ref) / ONE_DAY)),
+        everSeen: st.lastSeen > 0,
+      });
     }
-    return n;
+    return out.sort((a, b) => b.days - a.days);
   }
-  const absentAdultes = [15, 30, 60].map((d) => countAbsentSince(d, "adulte"));
-  const absentEnfants = [15, 30, 60].map((d) => countAbsentSince(d, "enfant"));
+  const absentAdultes = absentListFor("adulte");
+  const absentEnfants = absentListFor("enfant");
 
   // Présence par semaine — somme des présents par bucket ISO-week (8 dernières).
   const weeklySeries = (() => {
