@@ -252,7 +252,7 @@ function currentSeasonRange(now = new Date()) {
   const startYear = now.getMonth() < 8 ? now.getFullYear() - 1 : now.getFullYear();
   const start = new Date(startYear, 8, 1, 0, 0, 0, 0);
   const end = new Date(startYear + 1, 7, 31, 23, 59, 59, 999);
-  return { start: start.getTime(), end: end.getTime(), label: `${startYear}–${startYear + 1}` };
+  return { start: start.getTime(), end: end.getTime(), label: `${startYear}–${String(startYear + 1).slice(-2)}` };
 }
 
 // Combien d'années entières depuis `timestamp` jusqu'à maintenant — utilisé
@@ -1608,7 +1608,7 @@ export default function CostaVerdeApp() {
                     Planning
                   </div>
                   <div className="text-[13px] text-ink-soft mt-1.5">
-                    {location} · Saison 2025–26
+                    {location} · Saison {currentSeasonRange().label}
                   </div>
                 </div>
                 <div className="kanji-column text-[15px] leading-tight text-center text-pine/30 mt-1 pr-1 select-none">
