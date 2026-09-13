@@ -15,8 +15,19 @@ export const SEED_COURSES = [
     id: 1,
     day: "Mercredi",
     start: "14:30",
+    end: "15:15",
+    title: "Aiki Baby (4-5 ans)",
+    prof: "Sébastien",
+    location: "Vescovato",
+    status: "normal",
+    baseline: 6,
+  },
+  {
+    id: 3,
+    day: "Mercredi",
+    start: "15:15",
     end: "16:30",
-    title: "Jeunes (12-16 ans)",
+    title: "Enfants (6-12 ans)",
     prof: "Sébastien",
     location: "Vescovato",
     status: "normal",
@@ -50,7 +61,7 @@ export const PROF_MEMBERS = [
   { firstName: "Jean-Charles", lastName: "Lanusse" },
 ];
 
-export const ROLL_CALL_TARGETS = ["Jeunes (12-16 ans)", "Sénior - grand débutant", "Tout le club"];
+export const ROLL_CALL_TARGETS = ["Aiki Baby (4-5 ans)", "Enfants (6-12 ans)", "Sénior - grand débutant", "Tout le club"];
 
 // Nom du dojo — affiché dans la carte « prochain cours » du planning.
 // (Le reste des infos club — histoire, adresse, tarifs, liens — a été

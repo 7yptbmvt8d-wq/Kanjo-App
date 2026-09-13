@@ -287,7 +287,7 @@ function courseAudience(course) {
     t.includes("self-défense") || t.includes("self defense") ||
     t.includes("sénior") || t.includes("senior")
   ) return "adultes";
-  if (t.includes("enfant")) return "enfants";
+  if (t.includes("enfant") || t.includes("baby") || t.includes("bébé") || t.includes("bebe")) return "enfants";
   return "all";
 }
 
