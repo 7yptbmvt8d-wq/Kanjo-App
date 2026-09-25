@@ -283,10 +283,12 @@ export async function recordAttendance({
   prof,
   presentIds,
   absentIds,
+  date,
 }) {
   if (!firebaseEnabled) return null;
   return addDoc(collection(db, "attendance"), {
-    date: serverTimestamp(),
+    // date fournie = pointage rétroactif d'un jour passé ; sinon maintenant.
+    date: date instanceof Date ? date : serverTimestamp(),
     courseId,
     courseTitle,
     location,

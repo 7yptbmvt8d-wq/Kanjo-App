@@ -2666,16 +2666,29 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
   // editingSessionId : id de la session déjà enregistrée que le prof est
   // en train de corriger. Quand non null, on écrit par-dessus au submit.
   const [editingSessionId, setEditingSessionId] = useState(null);
+  // Jour pointé — par défaut aujourd'hui, mais le prof peut choisir un jour
+  // passé pour corriger (ou saisir) un pointage rétroactif.
+  const [dateStr, setDateStr] = useState(() => timestampToDateInput(null));
+  const isToday = isSameLocalDay(dateInputToDate(dateStr)?.getTime() ?? Date.now(), Date.now());
 
   const selectedCourse = activeCourses.find((c) => String(c.id) === selectedCourseId) || activeCourses[0];
 
-  // Existing pointage for the same course on the same calendar day?
-  // Le prof peut le corriger en cliquant sur "Corriger" — sinon la modale
-  // reste en lecture seule pour éviter le double comptage.
-  const todayMs = Date.now();
+  // Pointage existant pour ce cours ce jour-là ? Le prof peut le corriger
+  // (bouton "Corriger") — sinon la modale reste en lecture seule pour
+  // éviter le double comptage.
+  const selectedDayMs = dateInputToDate(dateStr)?.getTime() ?? Date.now();
   const existingSession = (sessions || []).find(
-    (s) => String(s.courseId) === String(selectedCourse?.id) && isSameLocalDay(timestampMillis(s.date), todayMs),
+    (s) => String(s.courseId) === String(selectedCourse?.id) && isSameLocalDay(timestampMillis(s.date), selectedDayMs),
   );
+
+  // Changement de jour ou de cours → on repart d'une ardoise vierge pour ne
+  // pas garder par erreur les coches d'un autre pointage.
+  useEffect(() => {
+    setStates({});
+    setEditingSessionId(null);
+    setError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateStr, selectedCourseId]);
   const editing = Boolean(existingSession) && existingSession.id === editingSessionId;
   const locked = Boolean(existingSession) && !editing;
   const existingPresent = existingSession ? (existingSession.presentIds || []).length : 0;
@@ -2725,10 +2738,6 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
     }
   }
 
-  // Filtre d'audience selon le cours : adultes/aïkitaïso → on retire les
-  // enfants (< ADULT_AGE_THRESHOLD ans). Pour cours enfants : que les
-  // enfants. Les fiches sans date de naissance restent visibles dans
-  // tous les cas (le prof tranche).
   // Filtre par groupe : un cours n'affiche que les membres de son groupe
   // (Aiki Baby / Jeunes / Adultes). Les fiches sans groupe connu restent
   // visibles pour ne perdre personne — le prof tranche.
@@ -2799,6 +2808,9 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
           prof: prof || "Prof",
           presentIds,
           absentIds,
+          // Jour passé → on horodate au jour choisi (midi) ; aujourd'hui →
+          // horodatage serveur exact.
+          date: isToday ? undefined : dateInputToDate(dateStr),
         });
       }
       onSave();
@@ -2885,6 +2897,40 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                   </option>
                 ))}
               </select>
+            )}
+          </label>
+
+          {/* Date du pointage — aujourd'hui par défaut ; un jour passé
+              permet de corriger ou saisir un pointage rétroactif. */}
+          <label className="block mt-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="text-[10.5px] font-bold tracking-section text-ink-soft uppercase">
+                Jour du pointage
+              </div>
+              {!isToday && (
+                <button
+                  type="button"
+                  onClick={() => setDateStr(timestampToDateInput(null))}
+                  className="text-[11px] font-semibold text-gold underline"
+                >
+                  Revenir à aujourd'hui
+                </button>
+              )}
+            </div>
+            <input
+              type="date"
+              value={dateStr}
+              onChange={(e) => setDateStr(e.target.value)}
+              max={timestampToDateInput(null)}
+              style={{ fontSize: 16 }}
+              className={`w-full border rounded-lg px-3 py-2.5 bg-paper focus:outline-none focus:border-pine ${
+                isToday ? "border-[rgba(34,30,24,0.12)]" : "border-gold/50 bg-gold-400/5"
+              }`}
+            />
+            {!isToday && (
+              <div className="text-[11px] text-gold mt-1.5 leading-snug">
+                Pointage rétroactif — tu corriges / saisis le cours de ce jour-là.
+              </div>
             )}
           </label>
 
@@ -2986,10 +3032,8 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
         <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-none">
           {members.length === 0 ? (
             <div className="text-center py-12 px-4 text-[12.5px] text-ink-muted italic">
-              {audience === "adultes"
-                ? "Aucun adulte sur la liste pour ce cours."
-                : audience === "enfants"
-                ? "Aucun enfant sur la liste pour ce cours."
+              {targetGroup
+                ? `Aucun membre du groupe ${GROUP_BY_ID[targetGroup]?.label || ""} sur la liste pour ce cours.`
                 : "Aucun adhérent enregistré — ajoute des membres dans l'onglet Membres."}
             </div>
           ) : (
