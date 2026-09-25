@@ -132,7 +132,7 @@ export function useAllMembers() {
   return list;
 }
 
-export async function createOrUpdateMember(licenseNum, { firstName, lastName, grade, gradeObtainedAt, birthYM, practiceLocations }) {
+export async function createOrUpdateMember(licenseNum, { firstName, lastName, grade, gradeObtainedAt, birthYM, practiceLocations, group }) {
   if (!firebaseEnabled) return null;
   const id = String(licenseNum).trim();
   const ref = doc(db, "members", id);
@@ -146,6 +146,10 @@ export async function createOrUpdateMember(licenseNum, { firstName, lastName, gr
     if (typeof birthYM === "string") patch.birthYM = birthYM;
     else if (birthYM === null) patch.birthYM = null;
     if (Array.isArray(practiceLocations)) patch.practiceLocations = practiceLocations;
+    // group : "aiki-baby" | "jeunes" | "adultes" pour une affectation
+    // manuelle ; null pour repasser en automatique (déduit de l'âge).
+    if (typeof group === "string") patch.group = group;
+    else if (group === null) patch.group = null;
     if (Object.keys(patch).length === 0) return null;
     return setDoc(ref, patch, { merge: true });
   }
@@ -156,6 +160,7 @@ export async function createOrUpdateMember(licenseNum, { firstName, lastName, gr
     gradeObtainedAt: gradeObtainedAt instanceof Date ? gradeObtainedAt : serverTimestamp(),
     gradeHistory: [],
     birthYM: typeof birthYM === "string" ? birthYM : null,
+    group: typeof group === "string" ? group : null,
     // Par défaut : aucun lieu coché → on tag le dojo pour rester permissif
     // tant que le prof n'a pas tranché.
     practiceLocations: Array.isArray(practiceLocations) && practiceLocations.length > 0
@@ -163,6 +168,24 @@ export async function createOrUpdateMember(licenseNum, { firstName, lastName, gr
       : ["Vescovato"],
     createdAt: serverTimestamp(),
   });
+}
+
+// Corrige le numéro de licence (= id du document) d'une fiche : recopie
+// intégralement la fiche vers le nouvel id puis supprime l'ancienne. Sert
+// à réparer une erreur de saisie. Lève "licence-taken" si une fiche existe
+// déjà sous le nouveau numéro, "member-missing" si l'ancienne a disparu.
+export async function changeMemberLicence(oldId, newId) {
+  if (!firebaseEnabled) return null;
+  const from = String(oldId).trim();
+  const to = String(newId).trim();
+  if (!from || !to || from === to) return to;
+  const target = await getDoc(doc(db, "members", to));
+  if (target.exists()) throw new Error("licence-taken");
+  const src = await getDoc(doc(db, "members", from));
+  if (!src.exists()) throw new Error("member-missing");
+  await setDoc(doc(db, "members", to), src.data());
+  await deleteDoc(doc(db, "members", from));
+  return to;
 }
 
 // Fetch a member doc once, without subscribing. Used by the "identify with

@@ -56,6 +56,7 @@ import {
   addAnnouncement,
   addRollCall,
   assignGrade,
+  changeMemberLicence,
   claimDevice,
   createOrUpdateMember,
   deleteAnnouncement,
@@ -147,6 +148,47 @@ function ageCategory(birthYM) {
   const a = ageInYears(birthYM);
   if (a == null) return null;
   return a < ADULT_AGE_THRESHOLD ? "enfant" : "adulte";
+}
+
+// Groupes pédagogiques du club (= les trois cours). L'âge donne un groupe
+// par défaut, mais le prof peut affecter un membre manuellement via
+// member.group — utile pour un enfant en avance / en retard ou un cas limite.
+const GROUPS = [
+  { id: "aiki-baby", label: "Aiki Baby", range: "4-5 ans", kanji: "赤" },
+  { id: "jeunes", label: "Jeunes", range: "6-12 ans", kanji: "子" },
+  { id: "adultes", label: "Adultes", range: "13 ans et +", kanji: "大" },
+];
+const GROUP_BY_ID = Object.fromEntries(GROUPS.map((g) => [g.id, g]));
+
+// Groupe déduit du seul âge (Aiki Baby < 6 · Jeunes 6-12 · Adultes ≥ 13).
+function autoGroup(birthYM) {
+  const a = ageInYears(birthYM);
+  if (a == null) return null;
+  if (a < 6) return "aiki-baby";
+  if (a < ADULT_AGE_THRESHOLD) return "jeunes";
+  return "adultes";
+}
+
+// Groupe effectif d'un membre : l'affectation manuelle prime, sinon l'âge.
+function memberGroup(member) {
+  if (member?.group && GROUP_BY_ID[member.group]) return member.group;
+  return autoGroup(member?.birthYM);
+}
+
+// Groupe visé par un cours / un appel, déduit de son intitulé. null = tout
+// public (pas de filtre).
+function courseGroup(title) {
+  const t = (title || "").toLocaleLowerCase("fr");
+  if (t.includes("baby") || t.includes("bébé") || t.includes("bebe")) return "aiki-baby";
+  if (t.includes("enfant") || t.includes("jeune")) return "jeunes";
+  if (
+    t.includes("aïkitaïso") || t.includes("aikitaiso") ||
+    t.includes("adulte") || t.includes("ados") ||
+    t.includes("arme") || t.includes("bokken") ||
+    t.includes("self-défense") || t.includes("self defense") ||
+    t.includes("sénior") || t.includes("senior")
+  ) return "adultes";
+  return null;
 }
 
 const norm = (s) => (s || "").toLocaleLowerCase("fr").replace(/\s+/g, "");
@@ -291,23 +333,17 @@ function courseAudience(course) {
   return "all";
 }
 
-// Cible d'un appel (rollCall) → audience visée. Réutilise les mêmes
-// règles que les cours pour rester cohérent.
-function rollCallAudience(rc) {
-  return courseAudience({ title: rc?.target || "" });
-}
-
 // Un adhérent doit-il voir cet appel ? Filtre par catégorie d'âge
 // (enfant/adulte) et par lieu de pratique. Les fiches sans birthYM ou
 // sans practiceLocations restent permissives (on les laisse voir
 // pour ne perdre personne).
 function memberSeesRollCall(member, rc) {
   if (!member || !rc || rc.type !== "presence") return true;
-  // Audience
-  const cat = ageCategory(member.birthYM);
-  const aud = rollCallAudience(rc);
-  if (cat && aud === "adultes" && cat !== "adulte") return false;
-  if (cat && aud === "enfants" && cat !== "enfant") return false;
+  // Audience — par groupe (Aiki Baby / Jeunes / Adultes). Les fiches sans
+  // groupe connu (ni manuel ni date de naissance) restent permissives.
+  const grp = memberGroup(member);
+  const target = courseGroup(rc?.target || "");
+  if (target && grp && grp !== target) return false;
   // Lieu
   if (rc.location && rc.location !== "Tout le club") {
     const locs = Array.isArray(member.practiceLocations) && member.practiceLocations.length > 0
@@ -2140,10 +2176,21 @@ export default function CostaVerdeApp() {
         <GradePickerModal
           member={memberEdit}
           onClose={() => setMemberEdit(null)}
-          onSave={async ({ grade, obtainedAt, birthYM, practiceLocations, manualBadges }) => {
-            await assignGrade(memberEdit.id, grade, obtainedAt, birthYM, practiceLocations);
+          onSave={async ({ grade, obtainedAt, birthYM, practiceLocations, manualBadges, firstName, lastName, newLicence, group }) => {
+            // 1) Changement de licence d'abord — recrée la fiche sous le
+            //    nouvel id (peut lever "licence-taken", remontée à la modale).
+            let targetId = memberEdit.id;
+            if (newLicence && newLicence !== targetId) {
+              targetId = await changeMemberLicence(memberEdit.id, newLicence);
+            }
+            // 2) Identité + groupe (merge sur la fiche cible).
+            if (firstName !== undefined || lastName !== undefined || group !== undefined) {
+              await createOrUpdateMember(targetId, { firstName, lastName, group });
+            }
+            // 3) Grade / dates / badges.
+            await assignGrade(targetId, grade, obtainedAt, birthYM, practiceLocations);
             if (Array.isArray(manualBadges)) {
-              await setMemberManualBadges(memberEdit.id, manualBadges);
+              await setMemberManualBadges(targetId, manualBadges);
             }
             setMemberEdit(null);
           }}
@@ -2682,19 +2729,17 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
   // enfants (< ADULT_AGE_THRESHOLD ans). Pour cours enfants : que les
   // enfants. Les fiches sans date de naissance restent visibles dans
   // tous les cas (le prof tranche).
-  const audience = courseAudience(selectedCourse);
+  // Filtre par groupe : un cours n'affiche que les membres de son groupe
+  // (Aiki Baby / Jeunes / Adultes). Les fiches sans groupe connu restent
+  // visibles pour ne perdre personne — le prof tranche.
+  const targetGroup = courseGroup(selectedCourse?.title || "");
   const members = membersWithoutProfs.filter((m) => {
-    // Filtre lieu : on n'affiche que les membres qui pratiquent au lieu
-    // sélectionné. Les fiches sans `practiceLocations` (anciennes ou
-    // mal renseignées) restent visibles pour ne pas perdre personne.
     const locs = Array.isArray(m.practiceLocations) && m.practiceLocations.length > 0
       ? m.practiceLocations
       : null;
     if (locs && !locs.includes(locationFilter)) return false;
-    const cat = ageCategory(m.birthYM);
-    if (!cat) return true;
-    if (audience === "adultes") return cat === "adulte";
-    if (audience === "enfants") return cat === "enfant";
+    const grp = memberGroup(m);
+    if (targetGroup && grp && grp !== targetGroup) return false;
     return true;
   });
 
@@ -3283,6 +3328,13 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
   const [selected, setSelected] = useState(member?.grade || GRADES[0].id);
   const [dateInput, setDateInput] = useState(() => timestampToDateInput(member?.gradeObtainedAt));
   const [birthYM, setBirthYM] = useState(() => member?.birthYM || "");
+  // Identité éditable — corrige une erreur de saisie (prénom, nom, licence).
+  const [firstName, setFirstName] = useState(member?.firstName || "");
+  const [lastName, setLastName] = useState(member?.lastName || "");
+  const [licence, setLicence] = useState(member?.id || "");
+  // Groupe / cours : "" = automatique (déduit de l'âge), sinon override.
+  const [group, setGroup] = useState(member?.group || "");
+  const [saveError, setSaveError] = useState(null);
   // Lieux de pratique : fallback "tout le club" si le champ n'existe pas
   // encore (anciennes fiches). Le prof peut toujours retirer / ajouter.
   const initialLocations = Array.isArray(member?.practiceLocations) && member.practiceLocations.length > 0
@@ -3311,10 +3363,17 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
   const dateChanged = !sameDateInput(member?.gradeObtainedAt, dateInput);
   const birthChanged = (birthYM || "") !== (member?.birthYM || "");
   const locationsChanged = JSON.stringify(initialLocations.slice().sort()) !== JSON.stringify(practiceLocations.slice().sort());
-  const dirty = gradeChanged || dateChanged || birthChanged || locationsChanged || manualChanged;
+  const firstNameChanged = firstName.trim() !== (member?.firstName || "");
+  const lastNameChanged = lastName.trim() !== (member?.lastName || "");
+  const licenceChanged = licence.trim() !== String(member?.id || "");
+  const groupChanged = (group || "") !== (member?.group || "");
+  const dirty = gradeChanged || dateChanged || birthChanged || locationsChanged || manualChanged
+    || firstNameChanged || lastNameChanged || licenceChanged || groupChanged;
 
   const cat = ageCategory(birthYM);
   const yrs = ageInYears(birthYM);
+  // Groupe effectif prévisualisé (override manuel ou déduit de l'âge).
+  const effectiveGroup = group || autoGroup(birthYM);
 
   function toggleLocation(loc) {
     setPracticeLocations((prev) =>
@@ -3323,6 +3382,15 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
   }
 
   async function submit() {
+    setSaveError(null);
+    if (licenceChanged && !licence.trim()) {
+      setSaveError("Le numéro de licence ne peut pas être vide.");
+      return;
+    }
+    if (firstNameChanged && !firstName.trim()) {
+      setSaveError("Le prénom ne peut pas être vide.");
+      return;
+    }
     setBusy(true);
     try {
       await onSave({
@@ -3331,12 +3399,22 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
         birthYM: birthChanged ? (birthYM || null) : undefined,
         practiceLocations: locationsChanged ? practiceLocations : undefined,
         manualBadges: manualChanged ? manualBadges : undefined,
+        firstName: firstNameChanged ? firstName.trim() : undefined,
+        lastName: lastNameChanged ? lastName.trim() : undefined,
+        newLicence: licenceChanged ? licence.trim() : undefined,
+        group: groupChanged ? (group || null) : undefined,
       });
     } catch (err) {
-      console.error("assignGrade failed:", err);
-    } finally {
+      console.error("member save failed:", err);
+      setSaveError(
+        err?.message === "licence-taken"
+          ? "Ce numéro de licence est déjà utilisé par une autre fiche."
+          : "Échec de l'enregistrement. Réessaie.",
+      );
       setBusy(false);
+      return;
     }
+    setBusy(false);
   }
 
   return (
@@ -3354,7 +3432,85 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
         <div className="text-[12px] text-ink-soft mt-0.5">
           {gradeChanged
             ? "Le grade actuel passera dans l'historique."
-            : "Modifie le grade, sa date d'obtention ou la date de naissance."}
+            : "Modifie l'identité, le groupe, le grade ou les dates."}
+        </div>
+
+        {/* Identité — prénom / nom / licence éditables pour corriger une
+            erreur de saisie. Changer la licence recrée la fiche sous le
+            nouveau numéro (les fiches sont indexées par licence). */}
+        <div className="mt-4 p-3 rounded-[14px] bg-paper border border-[rgba(34,30,24,0.07)]">
+          <label className="text-[10.5px] font-bold tracking-section text-ink-soft uppercase block">
+            Identité
+          </label>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Prénom"
+              style={{ fontSize: 16 }}
+              className="border border-[rgba(34,30,24,0.12)] rounded-lg px-3 py-2.5 bg-paper-card focus:outline-none focus:border-pine"
+            />
+            <input
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Nom"
+              style={{ fontSize: 16 }}
+              className="border border-[rgba(34,30,24,0.12)] rounded-lg px-3 py-2.5 bg-paper-card focus:outline-none focus:border-pine"
+            />
+          </div>
+          <label className="text-[10px] font-semibold text-ink-muted uppercase tracking-section block mt-2.5 mb-1">
+            N° de licence FFAB
+          </label>
+          <input
+            value={licence}
+            onChange={(e) => setLicence(e.target.value)}
+            inputMode="numeric"
+            placeholder="Licence"
+            style={{ fontSize: 16 }}
+            className="w-full border border-[rgba(34,30,24,0.12)] rounded-lg px-3 py-2.5 bg-paper-card focus:outline-none focus:border-pine tabular-nums"
+          />
+          {licenceChanged && (
+            <div className="text-[11px] text-gold mt-1.5 leading-snug">
+              La fiche sera déplacée sous le n° <strong>{licence.trim() || "—"}</strong>.
+            </div>
+          )}
+        </div>
+
+        {/* Groupe / cours — affectation manuelle. "Auto" suit l'âge. */}
+        <div className="mt-3 p-3 rounded-[14px] bg-paper border border-[rgba(34,30,24,0.07)]">
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-[10.5px] font-bold tracking-section text-ink-soft uppercase">
+              Groupe / cours
+            </label>
+            {effectiveGroup && (
+              <div className="text-[10px] font-bold tracking-section uppercase rounded-full px-2 py-0.5 bg-gold/15 text-gold border border-gold/30">
+                {GROUP_BY_ID[effectiveGroup]?.label}
+              </div>
+            )}
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {[{ id: "", label: "Auto (âge)", range: birthYM ? (autoGroup(birthYM) ? GROUP_BY_ID[autoGroup(birthYM)].label : "à classer") : "date de naissance requise" }, ...GROUPS].map((opt) => {
+              const active = group === opt.id;
+              return (
+                <button
+                  key={opt.id || "auto"}
+                  type="button"
+                  onClick={() => setGroup(opt.id)}
+                  className={`text-left rounded-[12px] px-3 py-2 border transition-colors ${
+                    active
+                      ? "bg-pine/10 border-pine/40"
+                      : "bg-paper-card border-[rgba(34,30,24,0.1)]"
+                  }`}
+                >
+                  <div className="text-[12.5px] font-semibold text-ink leading-tight flex items-center gap-1.5">
+                    {opt.id && <span className="font-serif text-[11px] text-ink-muted">{GROUP_BY_ID[opt.id]?.kanji}</span>}
+                    {opt.label}
+                  </div>
+                  <div className="text-[10.5px] text-ink-muted">{opt.range}</div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Date d'obtention — placed up front so it's never hidden behind
@@ -3418,33 +3574,6 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
           />
           <div className="text-[11px] text-ink-muted mt-1.5 leading-snug">
             Classement <strong className="text-ink-soft">enfant</strong> &lt; {ADULT_AGE_THRESHOLD} ans · <strong className="text-ink-soft">adulte</strong> ≥ {ADULT_AGE_THRESHOLD} ans.
-          </div>
-        </div>
-
-        {/* Lieux de pratique — multi-select, alimente les stats par dojo. */}
-        <div className="mt-3 p-3 rounded-[14px] bg-paper border border-[rgba(34,30,24,0.07)]">
-          <div className="text-[10.5px] font-bold tracking-section text-ink-soft uppercase">
-            Lieux de pratique
-          </div>
-          <div className="mt-1.5 flex gap-2">
-            {LOCATIONS.map((loc) => {
-              const checked = practiceLocations.includes(loc);
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  onClick={() => toggleLocation(loc)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold rounded-lg px-2 py-2 border transition-colors ${
-                    checked
-                      ? "bg-pine text-paper border-pine shadow-card"
-                      : "bg-paper-card text-ink-muted border-[rgba(34,30,24,0.12)]"
-                  }`}
-                >
-                  <MapPin size={12} />
-                  {loc.replace("Santa Maria Poggio", "Santa Maria")}
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -3531,6 +3660,12 @@ function GradePickerModal({ member, onSave, onLeave, onClose }) {
               <LogOut size={13} />
               {leaving ? "Enregistrement…" : "Marquer comme parti(e) du club"}
             </button>
+          </div>
+        )}
+
+        {saveError && (
+          <div className="mt-3 text-[12px] text-vermillion-500 bg-vermillion-50 border border-vermillion-200 rounded-lg px-3 py-2 leading-snug">
+            {saveError}
           </div>
         )}
 
@@ -5369,7 +5504,9 @@ function DashboardTab({
 function MemberCard({ m, onEdit }) {
   const g = GRADES.find((x) => x.id === m.grade);
   const dt = formatObtained(m.gradeObtainedAt);
-  const cat = ageCategory(m.birthYM);
+  const grpId = memberGroup(m);
+  const grp = grpId ? GROUP_BY_ID[grpId] : null;
+  const isManual = Boolean(m.group && GROUP_BY_ID[m.group]);
   const yrs = ageInYears(m.birthYM);
   const idx = GRADES.findIndex((x) => x.id === m.grade);
   const next = idx >= 0 && idx < GRADES.length - 1 ? GRADES[idx + 1] : null;
@@ -5398,19 +5535,20 @@ function MemberCard({ m, onEdit }) {
             {dt && ` · depuis ${dt}`}
           </div>
         </div>
-        {cat ? (
+        {grp ? (
           <div
-            className={`text-[10px] font-bold tracking-section uppercase rounded-full px-2 py-0.5 shrink-0 ${
-              cat === "enfant"
-                ? "bg-gold/15 text-gold border border-gold/30"
-                : "bg-pine/10 text-pine border border-pine/30"
+            className={`text-[10px] font-bold tracking-section uppercase rounded-full px-2 py-0.5 shrink-0 flex items-center gap-1 ${
+              grpId === "adultes"
+                ? "bg-pine/10 text-pine border border-pine/30"
+                : "bg-gold/15 text-gold border border-gold/30"
             }`}
+            title={isManual ? "Affecté manuellement" : "D'après l'âge"}
           >
-            {cat} · {yrs}
+            {grp.label}{yrs != null ? ` · ${yrs}` : ""}{isManual ? " ✱" : ""}
           </div>
         ) : (
           <div className="text-[10px] font-bold tracking-section uppercase rounded-full px-2 py-0.5 shrink-0 bg-paper text-ink-muted border border-dashed border-[rgba(34,30,24,0.2)]">
-            naissance ?
+            à classer
           </div>
         )}
         <Pencil size={15} className="text-ink-muted shrink-0" />
@@ -5453,18 +5591,21 @@ function MemberCard({ m, onEdit }) {
 }
 
 function MembersTab({ members, onEdit, onAdd }) {
-  // Split par catégorie : adultes / enfants / non classés (sans birthYM).
-  const adultes = members.filter((m) => ageCategory(m.birthYM) === "adulte");
-  const enfants = members.filter((m) => ageCategory(m.birthYM) === "enfant");
-  const aClasser = members.filter((m) => ageCategory(m.birthYM) == null);
-
-  const groups = [
-    { key: "adultes", label: "Adultes", list: adultes, kanji: "大" },
-    { key: "enfants", label: "Enfants", list: enfants, kanji: "子" },
-  ];
+  // Split par groupe pédagogique (affectation manuelle prioritaire, sinon
+  // l'âge) : Aiki Baby / Jeunes / Adultes / non classés (sans groupe ni
+  // date de naissance).
+  const byGroup = (id) => members.filter((m) => memberGroup(m) === id);
+  const groups = GROUPS.map((g) => ({
+    key: g.id,
+    label: g.label,
+    list: byGroup(g.id),
+    kanji: g.kanji,
+  }));
+  const aClasser = members.filter((m) => memberGroup(m) == null);
   if (aClasser.length > 0) {
     groups.push({ key: "aClasser", label: "À classer", list: aClasser, kanji: "?" });
   }
+  const total = members.length;
 
   return (
     <div key="members" className="pb-7 animate-slide-in-right">
@@ -5477,7 +5618,7 @@ function MembersTab({ members, onEdit, onAdd }) {
             Membres
           </div>
           <div className="text-[13px] text-ink-soft mt-1.5">
-            {adultes.length} adulte{adultes.length > 1 ? "s" : ""} · {enfants.length} enfant{enfants.length > 1 ? "s" : ""}
+            {total} adhérent{total > 1 ? "s" : ""}
             {aClasser.length > 0 && ` · ${aClasser.length} à classer`}
           </div>
         </div>
