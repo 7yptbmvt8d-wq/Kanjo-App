@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt" : la nouvelle version est téléchargée en fond mais activée
+      // seulement quand l'adhérent tape le bandeau (src/UpdateBanner.jsx),
+      // au lieu d'un rechargement silencieux qui pouvait laisser voir une
+      // vieille version tant que l'app n'était pas fermée/rouverte.
+      registerType: "prompt",
       includeAssets: ["favicon-48.png", "apple-touch-icon-180x180.png"],
       manifest: {
         name: "Kanjo Aïkido Isulanu",

@@ -3,7 +3,8 @@
 //   1. Push FCM  — à chaque nouvelle annonce / appel, notifier les
 //      appareils enregistrés dans /pushTokens.
 //   2. Sync Google Sheet — reporter chaque fiche adhérent (/members) dans
-//      un classeur, onglets « Adultes » / « Enfants » selon l'âge.
+//      un classeur, onglets « Aiki Baby » / « Jeunes » / « Adultes » selon
+//      le groupe (affectation manuelle prioritaire, sinon l'âge).
 //
 // Sans ces functions, l'app marche (pointage, badges, stats côté client),
 // mais pas de push de fond ni de tableur.
@@ -136,11 +137,15 @@ const SHEET_HEADER = [
   "Grade",
   "Date de grade",
   "Naissance",
-  "Lieux",
+  "Groupe",
   "Inscrit le",
   "Parti le",
 ];
-const TABS = ["Adultes", "Enfants"];
+// Onglets de placement (= les trois groupes du club).
+const TABS = ["Aiki Baby", "Jeunes", "Adultes"];
+// Onglets à balayer pour retirer une fiche : les trois groupes + l'ancien
+// onglet "Enfants" (migration depuis le classement enfant/adulte).
+const ALL_MEMBER_TABS = ["Aiki Baby", "Jeunes", "Adultes", "Enfants"];
 
 let sheetsClientPromise = null;
 function getSheets() {
@@ -191,10 +196,23 @@ function ageFromBirthYM(birthYM) {
   return age;
 }
 
-function audienceOf(member) {
-  const age = ageFromBirthYM(member.birthYM);
-  // Sans date de naissance, on classe par défaut en Adultes.
-  return age !== null && age < ADULT_AGE_THRESHOLD ? "Enfants" : "Adultes";
+// Groupe effectif d'un membre — doit rester aligné avec memberGroup() dans
+// src/CostaVerdeApp.jsx : l'affectation manuelle (m.group) prime, sinon on
+// déduit de l'âge (Aiki Baby < 6 · Jeunes 6-12 · Adultes ≥ 13).
+const GROUP_TAB = { "aiki-baby": "Aiki Baby", jeunes: "Jeunes", adultes: "Adultes" };
+function memberGroupId(m) {
+  if (m.group === "aiki-baby" || m.group === "jeunes" || m.group === "adultes") return m.group;
+  const age = ageFromBirthYM(m.birthYM);
+  if (age === null) return null;
+  if (age < 6) return "aiki-baby";
+  if (age < ADULT_AGE_THRESHOLD) return "jeunes";
+  return "adultes";
+}
+// Onglet de placement. Sans groupe connu (ni manuel ni date de naissance),
+// on classe par défaut en Adultes.
+function groupTab(m) {
+  const id = memberGroupId(m);
+  return id ? GROUP_TAB[id] : "Adultes";
 }
 
 function memberRow(licence, m) {
@@ -205,7 +223,7 @@ function memberRow(licence, m) {
     GRADE_LABEL[m.grade] || m.grade || "",
     tsToDate(m.gradeObtainedAt),
     fmtBirth(m.birthYM),
-    Array.isArray(m.practiceLocations) ? m.practiceLocations.join(", ") : "",
+    groupTab(m),
     tsToDate(m.createdAt),
     tsToDate(m.leftAt),
   ];
@@ -255,22 +273,25 @@ async function ensureTabs(sheets) {
   let meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   const existing = new Set((meta.data.sheets || []).map((s) => s.properties.title));
   for (const title of TABS) {
-    if (existing.has(title)) continue;
-    try {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SHEET_ID,
-        requestBody: { requests: [{ addSheet: { properties: { title } } }] },
-      });
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SHEET_ID,
-        range: `${title}!A1`,
-        valueInputOption: "RAW",
-        requestBody: { values: [SHEET_HEADER] },
-      });
-    } catch (e) {
-      // Onglet créé entre-temps par une exécution concurrente — on ignore.
-      if (!String((e && e.message) || "").includes("already exists")) throw e;
+    if (!existing.has(title)) {
+      try {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: SHEET_ID,
+          requestBody: { requests: [{ addSheet: { properties: { title } } }] },
+        });
+      } catch (e) {
+        // Onglet créé entre-temps par une exécution concurrente — on ignore.
+        if (!String((e && e.message) || "").includes("already exists")) throw e;
+      }
     }
+    // En-tête réécrit à chaque passage (idempotent) : garantit le bon
+    // libellé même sur un onglet pré-existant avec un ancien en-tête.
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${title}!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [SHEET_HEADER] },
+    });
   }
   // Mise en forme (relit les métadonnées pour couvrir les onglets neufs).
   meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
@@ -288,7 +309,7 @@ async function removeFromAllTabs(sheets, licence) {
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   for (const sheet of meta.data.sheets || []) {
     const title = sheet.properties.title;
-    if (!TABS.includes(title)) continue;
+    if (!ALL_MEMBER_TABS.includes(title)) continue;
     const sheetId = sheet.properties.sheetId;
     const colA = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
@@ -344,7 +365,7 @@ exports.syncMemberToSheet = onDocumentWritten(
     // a changé d'onglet : passage enfant→adulte, correction de naissance…),
     // puis on ré-insère dans le bon onglet.
     await removeFromAllTabs(sheets, licence);
-    const tab = audienceOf(m);
+    const tab = groupTab(m);
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
       range: `${tab}!A1`,
