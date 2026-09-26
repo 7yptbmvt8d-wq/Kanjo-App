@@ -3055,7 +3055,7 @@ function PointageModal({ courses, members: allMembers, sessions, prof, onSave, o
                       state === "present"
                         ? "bg-pine/5 ring-1 ring-pine/20"
                         : state === "absent"
-                        ? "bg-vermillion-50 ring-1 ring-vermillion-200"
+                        ? "bg-vermillion-500/15 ring-1 ring-vermillion-500/50"
                         : "bg-paper"
                     } ${locked ? "opacity-90" : ""}`}
                   >
@@ -5176,7 +5176,7 @@ function MemberDashboard({ member, courses, announcements, attendanceSessions = 
           <div
             className={`rounded-[16px] px-4 py-4 flex items-center gap-4 shadow-card ${
               justMissed
-                ? "bg-vermillion-50 border border-vermillion-200"
+                ? "bg-vermillion-500/15 border border-vermillion-500/50"
                 : "bg-paper-card border border-[rgba(34,30,24,0.07)]"
             }`}
           >
