@@ -3874,7 +3874,7 @@ function Top5Block({ label, rows }) {
   );
 }
 
-function AbsentsBlock({ live, adultes, enfants }) {
+function AbsentsBlock({ live, groups }) {
   const fmtDuration = (o) => {
     if (!o.everSeen) return "jamais venu";
     if (o.days >= 60) return `depuis ${Math.round(o.days / 30)} mois`;
@@ -3900,21 +3900,18 @@ function AbsentsBlock({ live, adultes, enfants }) {
           Disponible une fois le pointage en place.
         </div>
       ) : (
-        [
-          { name: "Adultes", list: adultes },
-          { name: "Enfants", list: enfants },
-        ].map(({ name, list }) => (
-          <div key={name} className="mb-3 last:mb-0">
+        groups.map(({ label, rows }) => (
+          <div key={label} className="mb-3 last:mb-0">
             <div className="text-[10.5px] font-bold tracking-section text-ink-muted uppercase mb-1.5 px-1">
-              {name}
+              {label}
             </div>
-            {list.length === 0 ? (
+            {rows.length === 0 ? (
               <div className="text-[11.5px] text-ink-muted italic px-1 py-1">
                 Personne — tout le monde est venu récemment. 🎉
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {list.map((o) => (
+                {rows.map((o) => (
                   <div
                     key={o.id}
                     className="flex items-center justify-between gap-2 rounded-[10px] border border-[rgba(34,30,24,0.07)] bg-paper px-3 py-2"
@@ -3990,21 +3987,24 @@ function GradeBreakdown({ label, total, counts }) {
 }
 
 function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOpenPointage, onOpenStage }) {
-  // Filtre par lieu : "all" agrège, sinon ne garde que les sessions ET les
-  // membres rattachés au lieu sélectionné. Les fiches sans champ
-  // `practiceLocations` (anciennes) sont considérées comme pratiquant
-  // partout — c'est le défaut au backfill.
-  const [locationFilter, setLocationFilter] = useState("all");
-  const matchesLocation = (loc) => locationFilter === "all" || loc === locationFilter;
-  const matchesMemberLocation = (m) => {
-    if (locationFilter === "all") return true;
-    const locs = Array.isArray(m.practiceLocations) && m.practiceLocations.length > 0
-      ? m.practiceLocations
-      : LOCATIONS; // fallback compat : tout le club
-    return locs.includes(locationFilter);
+  // Les adhérents partis sont exclus des statistiques (effectif, présence,
+  // classements). Leur historique reste dans le Google Sheet.
+  const members = allAdherents.filter((m) => !m.leftAt);
+  const memberById = new Map(members.map((m) => [m.id, m]));
+  const groupOfId = (id) => {
+    const m = memberById.get(id);
+    return m ? memberGroup(m) : null;
   };
-  const members = allAdherents.filter(matchesMemberLocation);
-  // ---- Computable now ----
+
+  const now = Date.now();
+  const ONE_DAY = 86400000;
+  const sevenDaysAgo = now - 7 * ONE_DAY;
+  const fourteenDaysAgo = now - 14 * ONE_DAY;
+  // Saison FFAB en cours (1er sept → 31 août) : tous les KPIs de présence y
+  // sont scopés et repartent à zéro au 1er septembre.
+  const season = currentSeasonRange(new Date(now));
+
+  // ---- Prêts à passer un grade ----
   const ready = members
     .map((m) => {
       const idx = GRADES.findIndex((g) => g.id === m.grade);
@@ -4018,8 +4018,6 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
     .filter(Boolean)
     .sort((a, b) => b.elapsed - a.elapsed);
 
-  // Enrolment cumulative — one point per member's createdAt + a final
-  // "now" anchor so the line extends to today.
   const enrolmentSeries = (() => {
     const sorted = members
       .map((m) => timestampMillis(m.createdAt))
@@ -4038,88 +4036,47 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
     .sort((a, b) => timestampMillis(b.createdAt) - timestampMillis(a.createdAt))
     .slice(0, 3);
 
-  // ---- Attendance KPIs (live, séparés adultes / enfants) ----
-  // Pour chaque memberId on pré-calcule sa catégorie. Les ids absents de
-  // la map ("unknown") sont comptés à part — on ne sait pas si c'est un
-  // adulte ou un enfant tant que la date de naissance manque.
-  const catById = new Map();
-  for (const m of members) catById.set(m.id, ageCategory(m.birthYM));
-
-  const now = Date.now();
-  const ONE_DAY = 86400000;
-  const sevenDaysAgo = now - 7 * ONE_DAY;
-
-  // Saison FFAB en cours (1er sept → 31 août). Tous les KPIs basés sur
-  // les pointages sont scopés à cette fenêtre : présence, taux moyen,
-  // top 5, absents, présence par semaine. Le 1er septembre les
-  // compteurs repartent à zéro tout seuls.
-  const season = currentSeasonRange(new Date(now));
+  // ---- Sessions datées de la saison (+ groupe ciblé déduit du titre) ----
   const datedSessions = sessions
-    .map((s) => ({
-      ...s,
-      _ms: timestampMillis(s.date),
-      _audience: courseAudience({ title: s.courseTitle }),
-    }))
-    .filter((s) => s._ms > 0)
-    .filter((s) => s._ms >= season.start && s._ms <= season.end)
-    .filter((s) => matchesLocation(s.location));
+    .map((s) => ({ ...s, _ms: timestampMillis(s.date), _group: courseGroup(s.courseTitle) }))
+    .filter((s) => s._ms > 0 && s._ms >= season.start && s._ms <= season.end);
 
-  // Audience d'une session : déduit du titre du cours stocké.
-  // - "enfants" ou "all" → comptée dans le bucket enfants
-  // - "adultes" ou "all" → comptée dans le bucket adultes
-  // Les sessions "tout public" (audience="all") comptent dans les deux.
-  const sessionsLast7d = datedSessions.filter((s) => s._ms >= sevenDaysAgo);
-  const sessionsLast7dAdultes = sessionsLast7d.filter((s) => s._audience !== "enfants");
-  const sessionsLast7dEnfants = sessionsLast7d.filter((s) => s._audience !== "adultes");
-
-  // Présents uniques cette semaine, par catégorie.
-  const uniquePresentLast7d = { adulte: new Set(), enfant: new Set(), other: new Set() };
-  for (const s of sessionsLast7d) {
-    for (const id of s.presentIds || []) {
-      const cat = catById.get(id);
-      if (cat === "adulte") uniquePresentLast7d.adulte.add(id);
-      else if (cat === "enfant") uniquePresentLast7d.enfant.add(id);
-      else uniquePresentLast7d.other.add(id);
+  // Présence agrégée sur une liste de sessions : présents uniques + taux.
+  function presenceOver(list) {
+    const present = new Set();
+    let p = 0, t = 0;
+    for (const s of list) {
+      for (const id of s.presentIds || []) { present.add(id); p++; t++; }
+      for (const _ of s.absentIds || []) t++;
     }
+    return { unique: present.size, sessions: list.length, rate: t > 0 ? Math.round((p / t) * 100) : null };
   }
+  const weekNow = presenceOver(datedSessions.filter((s) => s._ms >= sevenDaysAgo));
+  const weekPrev = presenceOver(datedSessions.filter((s) => s._ms >= fourteenDaysAgo && s._ms < sevenDaysAgo));
+  const seasonAll = presenceOver(datedSessions);
 
-  // Taux de présence moyen — séparé adultes / enfants à partir des ids.
-  // Compte aussi combien de sessions ont contribué à chaque taux pour le
-  // hint affiché ("sur N pointages").
-  const rateTally = {
-    adulte: { p: 0, t: 0, sessions: 0 },
-    enfant: { p: 0, t: 0, sessions: 0 },
+  // Flèche de tendance (comparaison semaine courante vs précédente).
+  const trendCount = (cur, prev) => {
+    if (cur > prev) return { txt: `▲ +${cur - prev}`, cls: "text-pine" };
+    if (cur < prev) return { txt: `▼ ${cur - prev}`, cls: "text-vermillion-500" };
+    return { txt: "→ stable", cls: "text-ink-muted" };
   };
-  for (const s of datedSessions) {
-    const cats = { adulte: false, enfant: false };
-    for (const id of s.presentIds || []) {
-      const c = catById.get(id);
-      if (c === "adulte" || c === "enfant") {
-        rateTally[c].p++; rateTally[c].t++; cats[c] = true;
-      }
-    }
-    for (const id of s.absentIds || []) {
-      const c = catById.get(id);
-      if (c === "adulte" || c === "enfant") {
-        rateTally[c].t++; cats[c] = true;
-      }
-    }
-    if (cats.adulte) rateTally.adulte.sessions++;
-    if (cats.enfant) rateTally.enfant.sessions++;
-  }
-  const rateAdultes = rateTally.adulte.t > 0 ? Math.round((rateTally.adulte.p / rateTally.adulte.t) * 100) : null;
-  const rateEnfants = rateTally.enfant.t > 0 ? Math.round((rateTally.enfant.p / rateTally.enfant.t) * 100) : null;
+  const trendRate = (cur, prev) => {
+    if (cur == null || prev == null) return null;
+    if (cur > prev) return { txt: `▲ +${cur - prev} pts`, cls: "text-pine" };
+    if (cur < prev) return { txt: `▼ ${cur - prev} pts`, cls: "text-vermillion-500" };
+    return { txt: "→ stable", cls: "text-ink-muted" };
+  };
+  const presTrend = trendCount(weekNow.unique, weekPrev.unique);
+  const rateTrend = trendRate(weekNow.rate, weekPrev.rate);
 
-  // Compte de présences par membre + dernière présence.
+  // ---- Stats par membre (présences / absences / dernière présence) ----
   const memberStats = new Map();
   for (const m of members) memberStats.set(m.id, { member: m, presents: 0, absents: 0, lastSeen: 0 });
   for (const s of datedSessions) {
     for (const id of s.presentIds || []) {
       const st = memberStats.get(id);
-      if (st) {
-        st.presents++;
-        if (s._ms > st.lastSeen) st.lastSeen = s._ms;
-      }
+      if (st) { st.presents++; if (s._ms > st.lastSeen) st.lastSeen = s._ms; }
     }
     for (const id of s.absentIds || []) {
       const st = memberStats.get(id);
@@ -4127,52 +4084,74 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
     }
   }
 
-  // Top 5 séparés — adultes et enfants côte à côte.
-  const top5ByCat = (cat) =>
+  // ---- Agrégats par groupe (présence semaine, taux saison, effectif) ----
+  const groupAgg = GROUPS.map((g) => {
+    const gm = members.filter((m) => memberGroup(m) === g.id);
+    let p = 0, t = 0;
+    const weekPresent = new Set();
+    let sessCount = 0;
+    for (const s of datedSessions) {
+      let touches = false;
+      for (const id of s.presentIds || []) {
+        if (groupOfId(id) === g.id) { p++; t++; touches = true; if (s._ms >= sevenDaysAgo) weekPresent.add(id); }
+      }
+      for (const id of s.absentIds || []) {
+        if (groupOfId(id) === g.id) { t++; touches = true; }
+      }
+      if (touches) sessCount++;
+    }
+    return {
+      g,
+      memberCount: gm.length,
+      rate: t > 0 ? Math.round((p / t) * 100) : null,
+      sessCount,
+      weekPresent: weekPresent.size,
+    };
+  });
+  // Groupes à afficher : ceux qui ont des membres OU des pointages.
+  const shownGroups = groupAgg.filter((d) => d.memberCount > 0 || d.sessCount > 0);
+
+  // Top 5 assiduité + absents nominatifs, par groupe.
+  const top5For = (gid) =>
     Array.from(memberStats.values())
-      .filter((st) => st.presents > 0 && ageCategory(st.member.birthYM) === cat)
+      .filter((st) => st.presents > 0 && memberGroup(st.member) === gid)
       .sort((a, b) => b.presents - a.presents || (b.lastSeen - a.lastSeen))
       .slice(0, 5);
-  const top5Adultes = top5ByCat("adulte");
-  const top5Enfants = top5ByCat("enfant");
-
-  // Élèves absents (pas vus depuis ≥ 15 jours), NOMINATIF. Les inscrits
-  // trop récents (createdAt > cutoff) sont exclus pour éviter les faux
-  // absents. Un membre jamais pointé compte depuis son inscription
-  // ("jamais venu"). Trié du plus longtemps absent au plus récent.
   const ABSENCE_MIN_DAYS = 15;
-  function absentListFor(cat) {
+  const absentFor = (gid) => {
     const cutoff = now - ABSENCE_MIN_DAYS * ONE_DAY;
     const out = [];
     for (const st of memberStats.values()) {
-      if (ageCategory(st.member.birthYM) !== cat) continue;
+      if (memberGroup(st.member) !== gid) continue;
       const createdMs = timestampMillis(st.member.createdAt);
       if (createdMs > cutoff) continue;
       const ref = st.lastSeen || createdMs;
       if (ref >= cutoff) continue;
       const name = `${st.member.firstName || ""} ${st.member.lastName || ""}`.trim();
-      out.push({
-        id: st.member.id,
-        name: name || `Licence ${st.member.id}`,
-        days: Math.max(0, Math.floor((now - ref) / ONE_DAY)),
-        everSeen: st.lastSeen > 0,
-      });
+      out.push({ id: st.member.id, name: name || `Licence ${st.member.id}`, days: Math.max(0, Math.floor((now - ref) / ONE_DAY)), everSeen: st.lastSeen > 0 });
     }
     return out.sort((a, b) => b.days - a.days);
-  }
-  const absentAdultes = absentListFor("adulte");
-  const absentEnfants = absentListFor("enfant");
+  };
 
-  // Présence par semaine — somme des présents par bucket ISO-week (8 dernières).
+  // Répartition de grade + âge moyen, par groupe.
+  const gradeCountsFor = (gid) => {
+    const c = Object.fromEntries(GRADES.map((g) => [g.id, 0]));
+    for (const m of members) if (memberGroup(m) === gid && c[m.grade] != null) c[m.grade]++;
+    return c;
+  };
+  const avgAgeFor = (gid) => {
+    const ages = members.filter((m) => memberGroup(m) === gid).map((m) => ageInYears(m.birthYM)).filter((a) => a != null);
+    return ages.length ? Math.round((ages.reduce((s, a) => s + a, 0) / ages.length) * 10) / 10 : null;
+  };
+  const unclassified = members.filter((m) => memberGroup(m) == null);
+
+  // Présence par semaine (8 dernières) — somme des présents par semaine.
   const weeklySeries = (() => {
     if (datedSessions.length === 0) return [];
     const NB_WEEKS = 8;
     const oldest = now - NB_WEEKS * 7 * ONE_DAY;
     const buckets = new Map();
-    for (let i = 0; i < NB_WEEKS; i++) {
-      const weekStart = now - (NB_WEEKS - 1 - i) * 7 * ONE_DAY;
-      buckets.set(weekStart, 0);
-    }
+    for (let i = 0; i < NB_WEEKS; i++) buckets.set(now - (NB_WEEKS - 1 - i) * 7 * ONE_DAY, 0);
     for (const s of datedSessions) {
       if (s._ms < oldest) continue;
       const weeksAgo = Math.floor((now - s._ms) / (7 * ONE_DAY));
@@ -4180,33 +4159,11 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
       const key = now - weeksAgo * 7 * ONE_DAY;
       buckets.set(key, (buckets.get(key) || 0) + (s.presentIds || []).length);
     }
-    return Array.from(buckets.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([when, count]) => ({ when, count }));
+    return Array.from(buckets.entries()).sort((a, b) => a[0] - b[0]).map(([when, count]) => ({ when, count }));
   })();
   const weeklyMax = Math.max(1, ...weeklySeries.map((w) => w.count));
 
-  // ---- Démographie (live, dérivée de birthYM) ----
-  // Sépare adultes et enfants : 2 moyennes distinctes + 2 répartitions de
-  // grades, plus parlantes que des chiffres globaux.
-  const adultes = members.filter((m) => ageCategory(m.birthYM) === "adulte");
-  const enfants = members.filter((m) => ageCategory(m.birthYM) === "enfant");
-  const adultesAges = adultes.map((m) => ageInYears(m.birthYM)).filter((a) => a != null);
-  const enfantsAges = enfants.map((m) => ageInYears(m.birthYM)).filter((a) => a != null);
-  const ageMoyenAdultes = adultesAges.length > 0
-    ? Math.round((adultesAges.reduce((s, a) => s + a, 0) / adultesAges.length) * 10) / 10
-    : null;
-  const ageMoyenEnfants = enfantsAges.length > 0
-    ? Math.round((enfantsAges.reduce((s, a) => s + a, 0) / enfantsAges.length) * 10) / 10
-    : null;
-  const knownBirthCount = adultes.length + enfants.length;
-  const missingBirthCount = members.length - knownBirthCount;
-
-  // Counts par grade × catégorie, pour les 2 répartitions séparées.
-  const adultesCounts = Object.fromEntries(GRADES.map((g) => [g.id, 0]));
-  const enfantsCounts = Object.fromEntries(GRADES.map((g) => [g.id, 0]));
-  for (const m of adultes) if (adultesCounts[m.grade] != null) adultesCounts[m.grade]++;
-  for (const m of enfants) if (enfantsCounts[m.grade] != null) enfantsCounts[m.grade]++;
+  const live = datedSessions.length > 0;
 
   return (
     <>
@@ -4235,46 +4192,13 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         </button>
         {datedSessions.length > 0 && (
           <div className="text-[11px] text-ink-muted mt-2 px-1">
-            {datedSessions.length} pointage{datedSessions.length > 1 ? "s" : ""} enregistré
-            {datedSessions.length > 1 ? "s" : ""} · partagé entre tous les profs.
+            {datedSessions.length} pointage{datedSessions.length > 1 ? "s" : ""} cette saison · partagé entre tous les profs.
           </div>
         )}
-
       </div>
 
-      {/* Sélecteur de lieu — filtre les KPIs basés sur les pointages.
-          Les chiffres d'effectif / grades / âges ne dépendent pas du dojo
-          et restent agrégés. */}
+      {/* ───────── 3 chiffres clés ───────── */}
       <div className="px-5 mt-7">
-        <div className="text-[10.5px] font-bold tracking-seal text-gold uppercase mb-2">
-          Données affichées
-        </div>
-        <div className="flex gap-1.5">
-          {[
-            { id: "all", label: "Tout le club" },
-            ...LOCATIONS.map((l) => ({ id: l, label: l.replace("Santa Maria Poggio", "Santa Maria") })),
-          ].map((opt) => {
-            const active = locationFilter === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setLocationFilter(opt.id)}
-                className={`text-[11.5px] font-semibold rounded-full px-3 py-1.5 transition-colors border ${
-                  active
-                    ? "bg-pine text-paper border-pine shadow-card"
-                    : "bg-paper-card text-ink-soft border-[rgba(34,30,24,0.12)] hover:border-pine/30"
-                }`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ───────── KPI grid (4 chiffres clés) ───────── */}
-      <div className="px-5 mt-4">
         <div className="flex items-baseline justify-between mb-3">
           <div className="text-[10.5px] font-bold tracking-seal text-gold uppercase">
             En un coup d'œil
@@ -4283,77 +4207,75 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
             Saison {season.label}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2.5">
           <StatTile
-            label="Effectif total"
+            label="Effectif"
             value={members.length}
-            hint={members.length > 1 ? "adhérents inscrits" : "adhérent inscrit"}
+            hint={members.length > 1 ? "adhérents actifs" : "adhérent actif"}
             tone="pine"
           />
-          <StatTile
-            label="Passages prévus"
-            value={ready.length}
-            hint="durée minimale atteinte"
-          />
+          {live ? (
+            <StatTile
+              label="Présents / sem."
+              value={weekNow.unique}
+              hint={presTrend.txt}
+            />
+          ) : (
+            <PendingTile label="Présents / sem." reason="Dès le 1er pointage." />
+          )}
+          {seasonAll.rate != null ? (
+            <StatTile
+              label="Taux présence"
+              value={`${seasonAll.rate}%`}
+              hint={rateTrend ? rateTrend.txt : "sur la saison"}
+            />
+          ) : (
+            <PendingTile label="Taux présence" reason="Dès le 1er pointage." />
+          )}
         </div>
+        {live && (
+          <div className="text-[10.5px] text-ink-muted mt-1.5 px-1">
+            Tendance vs semaine précédente · {weekNow.sessions} cours pointé{weekNow.sessions > 1 ? "s" : ""} cette semaine.
+          </div>
+        )}
       </div>
 
-      {/* Présence par catégorie — 2x2 : adultes / enfants × semaine / taux.
-          Les compteurs "sur N pointages" sont par catégorie : une session
-          du cours Enfants ne compte que dans le hint Enfants. */}
-      <div className="px-5 mt-5">
-        <div className="text-[10.5px] font-bold tracking-seal text-gold uppercase mb-3">
-          Présence cette semaine
+      {/* ───────── Présence par groupe ───────── */}
+      {shownGroups.length > 0 && (
+        <div className="px-5 mt-7">
+          <div className="text-[10.5px] font-bold tracking-seal text-gold uppercase mb-3">
+            Par groupe
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {shownGroups.map((d) => (
+              <div
+                key={d.g.id}
+                className="bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[16px] px-4 py-3 shadow-card flex items-center gap-3"
+              >
+                <div className="w-9 h-9 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center shrink-0 font-serif text-[15px] text-gold">
+                  {d.g.kanji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-serif text-[15px] font-semibold text-ink leading-tight">
+                    {d.g.label}
+                  </div>
+                  <div className="text-[11px] text-ink-muted">
+                    {d.memberCount} adhérent{d.memberCount > 1 ? "s" : ""} · {d.g.range}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-serif text-[18px] font-semibold text-ink tabular-nums leading-none">
+                    {d.rate != null ? `${d.rate}%` : "—"}
+                  </div>
+                  <div className="text-[10px] text-ink-muted mt-0.5">
+                    {d.sessCount > 0 ? `${d.weekPresent} cette sem.` : "pas encore pointé"}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {sessionsLast7dAdultes.length > 0 ? (
-            <StatTile
-              label="Adultes"
-              value={uniquePresentLast7d.adulte.size}
-              hint={`sur ${sessionsLast7dAdultes.length} cours pointé${sessionsLast7dAdultes.length > 1 ? "s" : ""}`}
-            />
-          ) : (
-            <PendingTile label="Adultes" reason="Aucun cours adulte pointé cette semaine." />
-          )}
-          {sessionsLast7dEnfants.length > 0 ? (
-            <StatTile
-              label="Enfants"
-              value={uniquePresentLast7d.enfant.size}
-              hint={`sur ${sessionsLast7dEnfants.length} cours pointé${sessionsLast7dEnfants.length > 1 ? "s" : ""}`}
-              tone="pine"
-            />
-          ) : (
-            <PendingTile label="Enfants" reason="Aucun cours enfant pointé cette semaine." />
-          )}
-        </div>
-      </div>
-
-      <div className="px-5 mt-5">
-        <div className="text-[10.5px] font-bold tracking-seal text-gold uppercase mb-3">
-          Taux de présence moyen
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {rateAdultes != null ? (
-            <StatTile
-              label="Adultes"
-              value={`${rateAdultes}%`}
-              hint={`sur ${rateTally.adulte.sessions} pointage${rateTally.adulte.sessions > 1 ? "s" : ""} cette saison`}
-            />
-          ) : (
-            <PendingTile label="Adultes" reason="Disponible dès le premier pointage adulte." />
-          )}
-          {rateEnfants != null ? (
-            <StatTile
-              label="Enfants"
-              value={`${rateEnfants}%`}
-              hint={`sur ${rateTally.enfant.sessions} pointage${rateTally.enfant.sessions > 1 ? "s" : ""} cette saison`}
-              tone="pine"
-            />
-          ) : (
-            <PendingTile label="Enfants" reason="Disponible dès le premier pointage enfant." />
-          )}
-        </div>
-      </div>
+      )}
 
       {/* ───────── Assiduité ───────── */}
       <div className="px-5 mt-8">
@@ -4365,13 +4287,13 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         </div>
       </div>
 
-      <Top5Block label="Adultes" rows={top5Adultes} />
-      <Top5Block label="Enfants" rows={top5Enfants} />
+      {shownGroups
+        .filter((d) => top5For(d.g.id).length > 0)
+        .map((d) => <Top5Block key={d.g.id} label={d.g.label} rows={top5For(d.g.id)} />)}
 
       <AbsentsBlock
-        live={datedSessions.length > 0}
-        adultes={absentAdultes}
-        enfants={absentEnfants}
+        live={live}
+        groups={shownGroups.map((d) => ({ label: d.g.label, rows: absentFor(d.g.id) }))}
       />
 
       {/* ───────── Évolution ───────── */}
@@ -4384,26 +4306,9 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         </div>
       </div>
 
-      {/* Effectif depuis le lancement */}
-      <div className="mx-5 mt-4 bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[16px] p-4 shadow-card">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="text-[11px] font-bold tracking-section text-ink-soft uppercase">
-            Effectif depuis le lancement
-          </div>
-          <div className="flex-1 h-px hairline" />
-          <div className="font-serif text-[20px] font-semibold text-ink tabular-nums">
-            {members.length}
-          </div>
-        </div>
-        <div className="text-[11px] text-ink-muted leading-snug mb-2">
-          Historique cumulé des inscriptions dans l'app (les saisons antérieures arriveront avec le temps).
-        </div>
-        <Sparkline series={enrolmentSeries} />
-      </div>
-
       {/* Présence par semaine */}
       <div
-        className={`mx-5 mt-3 bg-paper-card rounded-[16px] p-4 ${
+        className={`mx-5 mt-4 bg-paper-card rounded-[16px] p-4 ${
           weeklySeries.length > 0
             ? "border border-[rgba(34,30,24,0.07)] shadow-card"
             : "border border-dashed border-[rgba(34,30,24,0.18)]"
@@ -4432,15 +4337,13 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
             <div className="flex items-end gap-1.5 h-[80px]">
               {weeklySeries.map((w, i) => {
                 const pct = (w.count / weeklyMax) * 100;
-                const d = new Date(w.when);
-                const label = `${d.getDate()}/${d.getMonth() + 1}`;
+                const dte = new Date(w.when);
+                const label = `${dte.getDate()}/${dte.getMonth() + 1}`;
                 return (
                   <div key={w.when} className="flex-1 flex flex-col items-center gap-1 min-w-0">
                     <div className="flex-1 w-full flex items-end">
                       <div
-                        className={`w-full rounded-t ${
-                          w.count > 0 ? "bg-pine" : "bg-[rgba(34,30,24,0.08)]"
-                        }`}
+                        className={`w-full rounded-t ${w.count > 0 ? "bg-pine" : "bg-[rgba(34,30,24,0.08)]"}`}
                         style={{ height: `${Math.max(pct, w.count > 0 ? 6 : 2)}%` }}
                       />
                     </div>
@@ -4455,58 +4358,37 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         )}
       </div>
 
-      {/* Répartition par grade — séparée adultes / enfants. Chaque bloc
-          n'affiche que les grades effectivement portés dans sa catégorie
-          (pour ne pas saturer avec 11 lignes de zéros côté enfants). */}
+      {/* Répartition par grade — par groupe */}
       <div className="px-5 mt-3">
         <div className="text-[11px] font-bold tracking-section text-ink-soft uppercase mb-3">
           Répartition par grade
         </div>
-        <GradeBreakdown label="Adultes" total={adultes.length} counts={adultesCounts} />
-        <div className="h-3" />
-        <GradeBreakdown label="Enfants" total={enfants.length} counts={enfantsCounts} />
-        {missingBirthCount > 0 && (
+        {shownGroups.filter((d) => d.memberCount > 0).map((d, i) => (
+          <div key={d.g.id} className={i > 0 ? "mt-3" : ""}>
+            <GradeBreakdown label={d.g.label} total={d.memberCount} counts={gradeCountsFor(d.g.id)} />
+          </div>
+        ))}
+        {unclassified.length > 0 && (
           <div className="text-[11px] text-ink-muted italic leading-snug mt-2 px-1">
-            {missingBirthCount} fiche{missingBirthCount > 1 ? "s" : ""} non classée{missingBirthCount > 1 ? "s" : ""} — mois de naissance manquant.
+            {unclassified.length} fiche{unclassified.length > 1 ? "s" : ""} non classée{unclassified.length > 1 ? "s" : ""} — mois de naissance à renseigner (ou groupe à affecter) dans l'onglet Membres.
           </div>
         )}
       </div>
 
-      {/* Âge moyen — séparé adultes / enfants. Le total Adultes/Enfants
-          reste implicite dans le hint de chaque tuile. */}
-      <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
-        {ageMoyenAdultes != null ? (
-          <StatTile
-            label="Âge moyen adultes"
-            value={ageMoyenAdultes}
-            hint={`${adultes.length} adulte${adultes.length > 1 ? "s" : ""} · ≥ ${ADULT_AGE_THRESHOLD} ans`}
-          />
-        ) : (
-          <PendingTile
-            label="Âge moyen adultes"
-            reason="Renseigne le mois de naissance des adultes pour l'activer."
-          />
-        )}
-        {ageMoyenEnfants != null ? (
-          <StatTile
-            label="Âge moyen enfants"
-            value={ageMoyenEnfants}
-            hint={`${enfants.length} enfant${enfants.length > 1 ? "s" : ""} · < ${ADULT_AGE_THRESHOLD} ans`}
-          />
-        ) : (
-          <PendingTile
-            label="Âge moyen enfants"
-            reason="Renseigne le mois de naissance des enfants pour l'activer."
-          />
-        )}
+      {/* Âge moyen par groupe */}
+      <div className="mx-5 mt-3 grid grid-cols-3 gap-2.5">
+        {GROUPS.map((g) => {
+          const a = avgAgeFor(g.id);
+          const n = members.filter((m) => memberGroup(m) === g.id).length;
+          return a != null ? (
+            <StatTile key={g.id} label={`Âge · ${g.label}`} value={a} hint={`${n} membre${n > 1 ? "s" : ""}`} />
+          ) : (
+            <PendingTile key={g.id} label={`Âge · ${g.label}`} reason="Naissance à renseigner." />
+          );
+        })}
       </div>
-      {missingBirthCount > 0 && (
-        <div className="px-5 mt-2 text-[11px] text-ink-muted italic leading-snug">
-          {missingBirthCount} fiche{missingBirthCount > 1 ? "s" : ""} sans date de naissance — à compléter dans l'onglet Membres.
-        </div>
-      )}
 
-      {/* Prêts à passer un grade — gardé, utile complément des KPIs */}
+      {/* Prêts à passer un grade */}
       {ready.length > 0 && (
         <div className="px-5 mt-7">
           <div className="flex items-center justify-between mb-3">
@@ -4573,6 +4455,23 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
           </div>
         </div>
       )}
+
+      {/* Effectif depuis le lancement — relégué en bas (peu parlant à faible effectif) */}
+      <div className="mx-5 mt-7 bg-paper-card border border-[rgba(34,30,24,0.07)] rounded-[16px] p-4 shadow-card">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="text-[11px] font-bold tracking-section text-ink-soft uppercase">
+            Effectif depuis le lancement
+          </div>
+          <div className="flex-1 h-px hairline" />
+          <div className="font-serif text-[20px] font-semibold text-ink tabular-nums">
+            {members.length}
+          </div>
+        </div>
+        <div className="text-[11px] text-ink-muted leading-snug mb-2">
+          Historique cumulé des inscriptions dans l'app.
+        </div>
+        <Sparkline series={enrolmentSeries} />
+      </div>
     </>
   );
 }
