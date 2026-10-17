@@ -4334,13 +4334,13 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
             <div className="text-[11px] text-ink-muted leading-snug mb-3">
               Total des présences enregistrées sur les 8 dernières semaines.
             </div>
-            <div className="flex items-end gap-1.5 h-[80px]">
+            <div className="flex items-stretch gap-1.5 h-[80px]">
               {weeklySeries.map((w, i) => {
                 const pct = (w.count / weeklyMax) * 100;
                 const dte = new Date(w.when);
                 const label = `${dte.getDate()}/${dte.getMonth() + 1}`;
                 return (
-                  <div key={w.when} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                  <div key={w.when} className="flex-1 h-full flex flex-col items-center gap-1 min-w-0">
                     <div className="flex-1 w-full flex items-end">
                       <div
                         className={`w-full rounded-t ${w.count > 0 ? "bg-pine" : "bg-[rgba(34,30,24,0.08)]"}`}
