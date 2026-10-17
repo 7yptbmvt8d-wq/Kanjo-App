@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Calendar,
@@ -25,6 +25,7 @@ import {
   LayoutDashboard,
   TrendingUp,
   ClipboardList,
+  RefreshCw,
 } from "lucide-react";
 import { usePush } from "./hooks/usePush.js";
 import BadgesScreen from "./badges/BadgesScreen.jsx";
@@ -1322,6 +1323,66 @@ export default function CostaVerdeApp() {
   const [profIdentity, setProfIdentity] = useState(() => loadProfFromStorage());
   const [profGateOpen, setProfGateOpen] = useState(false);
   const [legacyProfMode, setLegacyProfMode] = useState(false);
+
+  // ── Tirer pour rafraîchir ──────────────────────────────────────────
+  // En haut de page, tirer vers le bas puis relâcher recharge l'app
+  // (utile pour forcer la dernière version). Geste tactile maison : les
+  // PWA iOS en plein écran n'ont pas le pull-to-refresh natif.
+  const scrollRef = useRef(null);
+  const pullRef = useRef(0);
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const PULL_THRESHOLD = 70;
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    let startY = 0;
+    let active = false;
+    const onStart = (e) => {
+      if (el.scrollTop <= 0 && !refreshing) {
+        startY = e.touches[0].clientY;
+        active = true;
+      } else {
+        active = false;
+      }
+    };
+    const onMove = (e) => {
+      if (!active || refreshing) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 0 && el.scrollTop <= 0) {
+        // Résistance : le doigt avance plus vite que l'indicateur.
+        const d = Math.min(110, dy * 0.5);
+        pullRef.current = d;
+        setPullY(d);
+      } else {
+        pullRef.current = 0;
+        setPullY(0);
+      }
+    };
+    const onEnd = () => {
+      if (!active) return;
+      active = false;
+      if (pullRef.current >= PULL_THRESHOLD) {
+        setRefreshing(true);
+        setPullY(PULL_THRESHOLD);
+        setTimeout(() => window.location.reload(), 400);
+      } else {
+        pullRef.current = 0;
+        setPullY(0);
+      }
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: true });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    el.addEventListener("touchcancel", onEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, [refreshing]);
+
   const profMode = profGateConfigured ? Boolean(profIdentity) : legacyProfMode;
   // Sébastien acts as the message-board admin: he can pin / unpin and
   // delete any announcement. Other profs only publish their own.
@@ -1630,8 +1691,27 @@ export default function CostaVerdeApp() {
           {profMode ? <LogOut size={15} strokeWidth={2} /> : <KeyRound size={15} strokeWidth={1.6} />}
         </button>
 
+        {/* Indicateur "tirer pour rafraîchir" */}
+        {(pullY > 0 || refreshing) && (
+          <div
+            className="absolute left-1/2 -translate-x-1/2 z-[55] pointer-events-none transition-[top] duration-100"
+            style={{ top: `calc(env(safe-area-inset-top) + ${Math.min(pullY, 90)}px)` }}
+          >
+            <div className="w-10 h-10 rounded-full bg-night border border-gold/40 shadow-device flex items-center justify-center">
+              <RefreshCw
+                size={18}
+                className={`text-gold ${refreshing ? "animate-spin" : ""}`}
+                style={refreshing ? undefined : { transform: `rotate(${pullY * 3}deg)` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-none">
+        <div
+          ref={scrollRef}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none"
+        >
           {tab === "planning" ? (
             <div key="planning" className="px-5 pt-[calc(env(safe-area-inset-top)+3.75rem)] pb-7 animate-slide-in-right">
               {/* Header — overline + Spectral title + subtitle + kanji column */}
