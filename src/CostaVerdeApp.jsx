@@ -2022,6 +2022,7 @@ export default function CostaVerdeApp() {
           ) : tab === "members" ? (
             <MembersTab
               members={allMembers.filter((m) => !isProfMember(m))}
+              sessions={attendanceSessions}
               onEdit={(m) => setMemberEdit(m)}
               onAdd={() => setAddMemberOpen(true)}
             />
@@ -5444,13 +5445,19 @@ function DashboardTab({
   );
 }
 
-function MemberCard({ m, onEdit }) {
+function MemberCard({ m, rate, onEdit }) {
   const g = GRADES.find((x) => x.id === m.grade);
   const dt = formatObtained(m.gradeObtainedAt);
   const grpId = memberGroup(m);
   const grp = grpId ? GROUP_BY_ID[grpId] : null;
   const isManual = Boolean(m.group && GROUP_BY_ID[m.group]);
   const yrs = ageInYears(m.birthYM);
+  // Assiduité saison : vert/or si régulier, rouge si décrocheur.
+  const rateVal = rate && rate.rate != null ? rate.rate : null;
+  const rateColor = rateVal == null ? "text-ink-muted"
+    : rateVal >= 80 ? "text-pine"
+    : rateVal >= 50 ? "text-gold-400"
+    : "text-vermillion-500";
   const idx = GRADES.findIndex((x) => x.id === m.grade);
   const next = idx >= 0 && idx < GRADES.length - 1 ? GRADES[idx + 1] : null;
   const targetMonths = next ? (MIN_MONTHS_TO_REACH[next.id] || 0) : 0;
@@ -5477,6 +5484,12 @@ function MemberCard({ m, onEdit }) {
             Licence {m.id} · {g?.label || "—"}
             {dt && ` · depuis ${dt}`}
           </div>
+          {rateVal != null && (
+            <div className="text-[11px] mt-0.5">
+              <span className={`font-semibold ${rateColor}`}>Assiduité {rateVal}%</span>
+              <span className="text-ink-muted"> · {rate.p}/{rate.t} cours</span>
+            </div>
+          )}
         </div>
         {grp ? (
           <div
@@ -5533,7 +5546,29 @@ function MemberCard({ m, onEdit }) {
   );
 }
 
-function MembersTab({ members, onEdit, onAdd }) {
+function MembersTab({ members, sessions = [], onEdit, onAdd }) {
+  // Taux d'assiduité par adhérent sur la saison en cours (présences /
+  // (présences + absences)). Null si l'adhérent n'a jamais été pointé.
+  const rateById = (() => {
+    const season = currentSeasonRange(new Date());
+    const tally = new Map();
+    for (const s of sessions || []) {
+      const ms = timestampMillis(s.date);
+      if (ms < season.start || ms > season.end) continue;
+      for (const id of s.presentIds || []) {
+        const t = tally.get(id) || { p: 0, t: 0 };
+        t.p++; t.t++; tally.set(id, t);
+      }
+      for (const id of s.absentIds || []) {
+        const t = tally.get(id) || { p: 0, t: 0 };
+        t.t++; tally.set(id, t);
+      }
+    }
+    const out = new Map();
+    for (const [id, v] of tally) out.set(id, { rate: v.t > 0 ? Math.round((v.p / v.t) * 100) : null, p: v.p, t: v.t });
+    return out;
+  })();
+
   // Split par groupe pédagogique (affectation manuelle prioritaire, sinon
   // l'âge) : Aiki Baby / Jeunes / Adultes / non classés (sans groupe ni
   // date de naissance).
@@ -5609,7 +5644,7 @@ function MembersTab({ members, onEdit, onAdd }) {
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {grp.list.map((m) => (
-                    <MemberCard key={m.id} m={m} onEdit={onEdit} />
+                    <MemberCard key={m.id} m={m} rate={rateById.get(m.id)} onEdit={onEdit} />
                   ))}
                 </div>
               )}
