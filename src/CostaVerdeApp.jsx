@@ -4320,6 +4320,24 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   const selectedRate = selectedRateWeek
     ? weeklyRateSeries.find((w) => w.when === selectedRateWeek)
     : null;
+  // Géométrie de la courbe de taux (SVG 300×96). Points espacés régulièrement,
+  // y = taux 0-100 %. Les semaines sans pointage (count null) sont des trous.
+  const RATE_W = 300, RATE_H = 96, R_PADX = 12, R_PADTOP = 16, R_PADBOT = 16;
+  const ratePts = weeklyRateSeries.map((w, i, arr) => {
+    const x = R_PADX + (arr.length > 1 ? i / (arr.length - 1) : 0.5) * (RATE_W - 2 * R_PADX);
+    const y = w.count == null ? null : R_PADTOP + (1 - w.count / 100) * (RATE_H - R_PADTOP - R_PADBOT);
+    return { ...w, i, x, y, leftPct: (x / RATE_W) * 100, topPct: y == null ? null : (y / RATE_H) * 100 };
+  });
+  const ratePath = (() => {
+    let d = "", pen = false;
+    for (const p of ratePts) {
+      if (p.y == null) { pen = false; continue; }
+      d += `${pen ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)} `;
+      pen = true;
+    }
+    return d.trim();
+  })();
+  const rateY50 = R_PADTOP + 0.5 * (RATE_H - R_PADTOP - R_PADBOT);
   const firstNames = (ids) =>
     (ids || [])
       .map((id) => memberById.get(id))
@@ -4610,40 +4628,47 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         ) : (
           <>
             <div className="text-[11px] text-ink-muted leading-snug mb-3">
-              Part des élèves présents parmi ceux attendus, chaque semaine. <strong className="text-ink-soft">Touche une barre</strong> pour le détail.
+              Part des élèves présents parmi ceux attendus, chaque semaine. <strong className="text-ink-soft">Touche un point</strong> pour le détail.
             </div>
-            <div className="flex items-stretch gap-1.5 h-[88px]">
-              {weeklyRateSeries.map((w, i) => {
-                const r = w.count; // taux % ou null
-                const isCurrent = i === weeklyRateSeries.length - 1;
-                const isSel = selectedRateWeek === w.when;
-                const barColor = r == null
-                  ? "bg-[rgba(34,30,24,0.08)]"
-                  : isSel
-                  ? "bg-gold-300"
-                  : r >= 50
-                  ? "bg-pine"
-                  : "bg-vermillion-500";
+            <div className="relative w-full" style={{ height: RATE_H }}>
+              <svg viewBox={`0 0 ${RATE_W} ${RATE_H}`} className="w-full" preserveAspectRatio="none" style={{ height: RATE_H }}>
+                {/* Repère 50 % */}
+                <line x1={R_PADX} y1={rateY50} x2={RATE_W - R_PADX} y2={rateY50} stroke="#8a7d5c" strokeOpacity="0.35" strokeDasharray="3 4" strokeWidth="1" />
+                {ratePath && (
+                  <path d={ratePath} fill="none" stroke="#c9a24d" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+                )}
+              </svg>
+              {/* Points tappables (HTML superposé) */}
+              {ratePts.map((p) => {
+                if (p.y == null) return null;
+                const isSel = selectedRateWeek === p.when;
+                const low = p.count < 50;
                 return (
                   <button
+                    key={p.when}
                     type="button"
-                    key={w.when}
-                    onClick={() => setSelectedRateWeek(isSel ? null : w.when)}
-                    className="flex-1 h-full flex flex-col items-center gap-1 min-w-0 cursor-pointer"
+                    onClick={() => setSelectedRateWeek(isSel ? null : p.when)}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+                    style={{ left: `${p.leftPct}%`, top: `${p.topPct}%`, width: 30, height: 30 }}
+                    aria-label={`${new Date(p.when).getDate()}/${new Date(p.when).getMonth() + 1} : ${p.count}%`}
                   >
-                    <div className={`text-[9px] font-semibold tabular-nums leading-none h-[10px] ${isSel ? "text-gold" : "text-ink-soft"}`}>
-                      {r != null ? `${r}%` : ""}
-                    </div>
-                    <div className="flex-1 w-full flex items-end">
-                      <div
-                        className={`w-full rounded-t transition-colors ${barColor} ${isSel ? "ring-2 ring-gold/60" : ""}`}
-                        style={{ height: `${r == null ? 2 : Math.max(r, 4)}%` }}
-                      />
-                    </div>
-                    <div className={`text-[9px] tabular-nums leading-none ${isSel || isCurrent ? "text-gold font-semibold" : "text-ink-muted"}`}>
-                      {isCurrent ? "cette sem." : `${new Date(w.when).getDate()}/${new Date(w.when).getMonth() + 1}`}
-                    </div>
+                    <span
+                      className={`block rounded-full ${isSel ? "bg-gold-300 ring-2 ring-gold/60" : low ? "bg-vermillion-500" : "bg-pine"}`}
+                      style={{ width: isSel ? 11 : 7, height: isSel ? 11 : 7 }}
+                    />
                   </button>
+                );
+              })}
+            </div>
+            {/* Axe des semaines */}
+            <div className="flex mt-1">
+              {ratePts.map((p, i) => {
+                const isCurrent = i === ratePts.length - 1;
+                const isSel = selectedRateWeek === p.when;
+                return (
+                  <div key={p.when} className={`flex-1 text-center text-[9px] tabular-nums leading-none ${isSel || isCurrent ? "text-gold font-semibold" : "text-ink-muted"}`}>
+                    {isCurrent ? "cette sem." : `${new Date(p.when).getDate()}/${new Date(p.when).getMonth() + 1}`}
+                  </div>
                 );
               })}
             </div>
