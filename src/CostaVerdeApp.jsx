@@ -315,6 +315,18 @@ function isSameLocalDay(msA, msB) {
     && a.getDate() === b.getDate();
 }
 
+// Début de la semaine CALENDAIRE (lundi 00:00 local) contenant `ms`. Sert à
+// regrouper les présences par semaine réelle plutôt que par tranche de 7 j
+// glissante — sinon un cours fait il y a 6 j 23 h tombe dans la mauvaise
+// barre selon l'heure courante.
+function startOfWeekMs(ms) {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  const dow = (d.getDay() + 6) % 7; // lundi = 0, dimanche = 6
+  d.setDate(d.getDate() - dow);
+  return d.getTime();
+}
+
 // Audience d'un cours : déduit du titre, pour filtrer la liste de pointage.
 // "all" = tout adhérent · "adultes" = ≥ ADULT_AGE_THRESHOLD · "enfants" = < seuil.
 // Les cours adultes (armes, self-défense, séniors, ados) sont rangés en
@@ -4079,8 +4091,10 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
 
   const now = Date.now();
   const ONE_DAY = 86400000;
-  const sevenDaysAgo = now - 7 * ONE_DAY;
-  const fourteenDaysAgo = now - 14 * ONE_DAY;
+  // Bornes de semaines CALENDAIRES (lundi) pour les KPIs "cette semaine" vs
+  // "semaine précédente" — cohérent avec l'histogramme par semaine.
+  const thisWeekStart = startOfWeekMs(now);
+  const lastWeekStart = thisWeekStart - 7 * ONE_DAY;
   // Saison FFAB en cours (1er sept → 31 août) : tous les KPIs de présence y
   // sont scopés et repartent à zéro au 1er septembre.
   const season = currentSeasonRange(new Date(now));
@@ -4132,8 +4146,8 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
     }
     return { unique: present.size, sessions: list.length, rate: t > 0 ? Math.round((p / t) * 100) : null };
   }
-  const weekNow = presenceOver(datedSessions.filter((s) => s._ms >= sevenDaysAgo));
-  const weekPrev = presenceOver(datedSessions.filter((s) => s._ms >= fourteenDaysAgo && s._ms < sevenDaysAgo));
+  const weekNow = presenceOver(datedSessions.filter((s) => s._ms >= thisWeekStart));
+  const weekPrev = presenceOver(datedSessions.filter((s) => s._ms >= lastWeekStart && s._ms < thisWeekStart));
   const seasonAll = presenceOver(datedSessions);
 
   // Flèche de tendance (comparaison semaine courante vs précédente).
@@ -4174,7 +4188,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
     for (const s of datedSessions) {
       let touches = false;
       for (const id of s.presentIds || []) {
-        if (groupOfId(id) === g.id) { p++; t++; touches = true; if (s._ms >= sevenDaysAgo) weekPresent.add(id); }
+        if (groupOfId(id) === g.id) { p++; t++; touches = true; if (s._ms >= thisWeekStart) weekPresent.add(id); }
       }
       for (const id of s.absentIds || []) {
         if (groupOfId(id) === g.id) { t++; touches = true; }
@@ -4226,21 +4240,20 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   };
   const unclassified = members.filter((m) => memberGroup(m) == null);
 
-  // Présence par semaine (8 dernières) — somme des présents par semaine.
+  // Présence par semaine (8 dernières) — somme des présents par semaine
+  // CALENDAIRE (lundi → dimanche), pour que chaque cours tombe dans la
+  // vraie semaine où il a eu lieu.
   const weeklySeries = (() => {
     if (datedSessions.length === 0) return [];
     const NB_WEEKS = 8;
-    const oldest = now - NB_WEEKS * 7 * ONE_DAY;
-    const buckets = new Map();
-    for (let i = 0; i < NB_WEEKS; i++) buckets.set(now - (NB_WEEKS - 1 - i) * 7 * ONE_DAY, 0);
+    const weekStarts = [];
+    for (let i = 0; i < NB_WEEKS; i++) weekStarts.push(thisWeekStart - (NB_WEEKS - 1 - i) * 7 * ONE_DAY);
+    const counts = new Map(weekStarts.map((w) => [w, 0]));
     for (const s of datedSessions) {
-      if (s._ms < oldest) continue;
-      const weeksAgo = Math.floor((now - s._ms) / (7 * ONE_DAY));
-      if (weeksAgo < 0 || weeksAgo >= NB_WEEKS) continue;
-      const key = now - weeksAgo * 7 * ONE_DAY;
-      buckets.set(key, (buckets.get(key) || 0) + (s.presentIds || []).length);
+      const ws = startOfWeekMs(s._ms);
+      if (counts.has(ws)) counts.set(ws, counts.get(ws) + (s.presentIds || []).length);
     }
-    return Array.from(buckets.entries()).sort((a, b) => a[0] - b[0]).map(([when, count]) => ({ when, count }));
+    return weekStarts.map((when) => ({ when, count: counts.get(when) }));
   })();
   const weeklyMax = Math.max(1, ...weeklySeries.map((w) => w.count));
 
@@ -4413,23 +4426,27 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         ) : (
           <>
             <div className="text-[11px] text-ink-muted leading-snug mb-3">
-              Total des présences enregistrées sur les 8 dernières semaines.
+              Total des présences par semaine (lundi → dimanche) sur 8 semaines. Chaque barre = une semaine ; la date est celle du lundi.
             </div>
-            <div className="flex items-stretch gap-1.5 h-[80px]">
+            <div className="flex items-stretch gap-1.5 h-[88px]">
               {weeklySeries.map((w, i) => {
                 const pct = (w.count / weeklyMax) * 100;
                 const dte = new Date(w.when);
                 const label = `${dte.getDate()}/${dte.getMonth() + 1}`;
+                const isCurrent = i === weeklySeries.length - 1;
                 return (
                   <div key={w.when} className="flex-1 h-full flex flex-col items-center gap-1 min-w-0">
+                    <div className="text-[9px] font-semibold text-ink-soft tabular-nums leading-none h-[10px]">
+                      {w.count > 0 ? w.count : ""}
+                    </div>
                     <div className="flex-1 w-full flex items-end">
                       <div
                         className={`w-full rounded-t ${w.count > 0 ? "bg-pine" : "bg-[rgba(34,30,24,0.08)]"}`}
                         style={{ height: `${Math.max(pct, w.count > 0 ? 6 : 2)}%` }}
                       />
                     </div>
-                    <div className="text-[9px] text-ink-muted tabular-nums leading-none">
-                      {i === weeklySeries.length - 1 ? "auj." : label}
+                    <div className={`text-[9px] tabular-nums leading-none ${isCurrent ? "text-gold font-semibold" : "text-ink-muted"}`}>
+                      {isCurrent ? "cette sem." : label}
                     </div>
                   </div>
                 );
