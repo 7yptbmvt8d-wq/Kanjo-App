@@ -3869,7 +3869,8 @@ function PendingTile({ label, reason }) {
 
 // Inline SVG sparkline — no chart library. Pass series = [{ when, count }]
 // already ordered chronologically and the chart auto-scales both axes.
-function Sparkline({ series, height = 70, color = "#c9a24d" }) {
+function Sparkline({ series, height = 70, color = "#c9a24d", unit = "inscrit" }) {
+  const [sel, setSel] = useState(null);
   if (!series || series.length < 2) {
     return (
       <div
@@ -3890,25 +3891,54 @@ function Sparkline({ series, height = 70, color = "#c9a24d" }) {
   const w = 300;
   const h = height;
   const pad = 6;
-  const path = series
-    .map((p, i) => {
-      const x = pad + ((p.when - xMin) / xRange) * (w - pad * 2);
-      const y = h - pad - (p.count / yRange) * (h - pad * 2);
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const pts = series.map((p, i) => {
+    const x = pad + ((p.when - xMin) / xRange) * (w - pad * 2);
+    const y = h - pad - (p.count / yRange) * (h - pad * 2);
+    return { ...p, i, x, y, leftPct: (x / w) * 100, topPct: (y / h) * 100 };
+  });
+  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
   const areaPath = `${path} L${(w - pad).toFixed(1)},${h - pad} L${pad},${h - pad} Z`;
+  const selected = sel != null ? pts[sel] : null;
+  const fmt = (ms) => new Date(ms).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" preserveAspectRatio="none" style={{ height }}>
-      <path d={areaPath} fill={color} fillOpacity="0.08" />
-      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      {series.length <= 12 &&
-        series.map((p, i) => {
-          const x = pad + ((p.when - xMin) / xRange) * (w - pad * 2);
-          const y = h - pad - (p.count / yRange) * (h - pad * 2);
-          return <circle key={i} cx={x} cy={y} r="2.4" fill={color} />;
+    <div>
+      {/* Libellé du point sélectionné */}
+      <div className="h-[18px] mb-1 text-[11px] leading-none">
+        {selected ? (
+          <span>
+            <span className="text-ink-soft">{fmt(selected.when)}</span>
+            <span className="text-gold font-semibold"> · {selected.count} {unit}{selected.count > 1 ? "s" : ""}</span>
+          </span>
+        ) : (
+          <span className="text-ink-muted italic">Touche un point pour la date et le total.</span>
+        )}
+      </div>
+      <div className="relative w-full" style={{ height }}>
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full" preserveAspectRatio="none" style={{ height }}>
+          <path d={areaPath} fill={color} fillOpacity="0.08" />
+          <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+        {/* Points tappables (HTML, superposés) */}
+        {pts.map((p) => {
+          const isSel = sel === p.i;
+          return (
+            <button
+              key={p.i}
+              type="button"
+              onClick={() => setSel(isSel ? null : p.i)}
+              className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+              style={{ left: `${p.leftPct}%`, top: `${p.topPct}%`, width: 28, height: 28 }}
+              aria-label={`${fmt(p.when)} : ${p.count}`}
+            >
+              <span
+                className={`block rounded-full ${isSel ? "bg-gold-300 ring-2 ring-gold/60" : "bg-pine"}`}
+                style={{ width: isSel ? 10 : 6, height: isSel ? 10 : 6 }}
+              />
+            </button>
+          );
         })}
-    </svg>
+      </div>
+    </div>
   );
 }
 
@@ -4246,25 +4276,35 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   // Présence par semaine (8 dernières) — somme des présents par semaine
   // CALENDAIRE (lundi → dimanche), pour que chaque cours tombe dans la
   // vraie semaine où il a eu lieu.
-  const weeklySeries = (() => {
-    if (datedSessions.length === 0) return [];
+  // Semaines calendaires (8 dernières). On recule via startOfWeekMs (et non
+  // en soustrayant 7×24 h) pour rester juste à travers un changement d'heure.
+  const weekStarts = (() => {
     const NB_WEEKS = 8;
-    // On recule semaine par semaine via startOfWeekMs (et non en soustrayant
-    // 7×24 h) pour que chaque casier reste le vrai lundi 00:00 local même à
-    // travers un changement d'heure — sinon les semaines d'avant la bascule
-    // ne tombent dans aucun casier et apparaissent vides.
-    const weekStarts = [thisWeekStart];
+    const arr = [thisWeekStart];
     let cur = thisWeekStart;
     for (let i = 1; i < NB_WEEKS; i++) {
       cur = startOfWeekMs(cur - 3 * ONE_DAY);
-      weekStarts.unshift(cur);
+      arr.unshift(cur);
     }
-    const counts = new Map(weekStarts.map((w) => [w, 0]));
+    return arr;
+  })();
+  // Présences (volume) + taux par semaine, calculés en un passage.
+  const { weeklySeries, weeklyRateSeries } = (() => {
+    if (datedSessions.length === 0) return { weeklySeries: [], weeklyRateSeries: [] };
+    const agg = new Map(weekStarts.map((w) => [w, { present: 0, total: 0 }]));
     for (const s of datedSessions) {
       const ws = startOfWeekMs(s._ms);
-      if (counts.has(ws)) counts.set(ws, counts.get(ws) + (s.presentIds || []).length);
+      const a = agg.get(ws);
+      if (!a) continue;
+      a.present += (s.presentIds || []).length;
+      a.total += (s.presentIds || []).length + (s.absentIds || []).length;
     }
-    return weekStarts.map((when) => ({ when, count: counts.get(when) }));
+    const vol = weekStarts.map((when) => ({ when, count: agg.get(when).present }));
+    const rate = weekStarts.map((when) => {
+      const a = agg.get(when);
+      return { when, present: a.present, total: a.total, count: a.total > 0 ? Math.round((a.present / a.total) * 100) : null };
+    });
+    return { weeklySeries: vol, weeklyRateSeries: rate };
   })();
   const weeklyMax = Math.max(1, ...weeklySeries.map((w) => w.count));
 
@@ -4275,6 +4315,11 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   const selectedWeekSessions = selectedWeek
     ? datedSessions.filter((s) => startOfWeekMs(s._ms) === selectedWeek).sort((a, b) => a._ms - b._ms)
     : [];
+  // Semaine sélectionnée dans le graphe "taux de présence".
+  const [selectedRateWeek, setSelectedRateWeek] = useState(null);
+  const selectedRate = selectedRateWeek
+    ? weeklyRateSeries.find((w) => w.when === selectedRateWeek)
+    : null;
   const firstNames = (ids) =>
     (ids || [])
       .map((id) => memberById.get(id))
@@ -4533,6 +4578,93 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                     })}
                   </div>
                 )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Taux de présence par semaine (interactif) */}
+      <div
+        className={`mx-5 mt-3 bg-paper-card rounded-[16px] p-4 ${
+          live
+            ? "border border-[rgba(34,30,24,0.07)] shadow-card"
+            : "border border-dashed border-[rgba(34,30,24,0.18)]"
+        }`}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <div className="text-[11px] font-bold tracking-section text-ink-soft uppercase">
+            Taux de présence par semaine
+          </div>
+          <div className="flex-1 h-px hairline" />
+          {seasonAll.rate != null && (
+            <div className="font-serif text-[14px] font-semibold text-ink tabular-nums">
+              {seasonAll.rate}%
+            </div>
+          )}
+        </div>
+        {!live ? (
+          <div className="text-[11px] text-ink-muted italic leading-snug mt-1">
+            Disponible une fois les premiers appels enregistrés.
+          </div>
+        ) : (
+          <>
+            <div className="text-[11px] text-ink-muted leading-snug mb-3">
+              Part des élèves présents parmi ceux attendus, chaque semaine. <strong className="text-ink-soft">Touche une barre</strong> pour le détail.
+            </div>
+            <div className="flex items-stretch gap-1.5 h-[88px]">
+              {weeklyRateSeries.map((w, i) => {
+                const r = w.count; // taux % ou null
+                const isCurrent = i === weeklyRateSeries.length - 1;
+                const isSel = selectedRateWeek === w.when;
+                const barColor = r == null
+                  ? "bg-[rgba(34,30,24,0.08)]"
+                  : isSel
+                  ? "bg-gold-300"
+                  : r >= 50
+                  ? "bg-pine"
+                  : "bg-vermillion-500";
+                return (
+                  <button
+                    type="button"
+                    key={w.when}
+                    onClick={() => setSelectedRateWeek(isSel ? null : w.when)}
+                    className="flex-1 h-full flex flex-col items-center gap-1 min-w-0 cursor-pointer"
+                  >
+                    <div className={`text-[9px] font-semibold tabular-nums leading-none h-[10px] ${isSel ? "text-gold" : "text-ink-soft"}`}>
+                      {r != null ? `${r}%` : ""}
+                    </div>
+                    <div className="flex-1 w-full flex items-end">
+                      <div
+                        className={`w-full rounded-t transition-colors ${barColor} ${isSel ? "ring-2 ring-gold/60" : ""}`}
+                        style={{ height: `${r == null ? 2 : Math.max(r, 4)}%` }}
+                      />
+                    </div>
+                    <div className={`text-[9px] tabular-nums leading-none ${isSel || isCurrent ? "text-gold font-semibold" : "text-ink-muted"}`}>
+                      {isCurrent ? "cette sem." : `${new Date(w.when).getDate()}/${new Date(w.when).getMonth() + 1}`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedRate && (
+              <div className="mt-3 pt-3 border-t border-[rgba(34,30,24,0.07)] animate-fade-in flex items-center justify-between gap-2">
+                <div className="text-[12px] text-ink leading-snug">
+                  <span className="text-gold font-bold tracking-section uppercase text-[11px]">
+                    Semaine du {new Date(selectedRateWeek).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
+                  </span>
+                  <div className="mt-0.5">
+                    {selectedRate.total > 0 ? (
+                      <>
+                        <strong className={selectedRate.count >= 50 ? "text-pine" : "text-vermillion-500"}>{selectedRate.count}%</strong>
+                        <span className="text-ink-soft"> — {selectedRate.present} présent{selectedRate.present > 1 ? "s" : ""} sur {selectedRate.total} attendu{selectedRate.total > 1 ? "s" : ""}</span>
+                      </>
+                    ) : (
+                      <span className="text-ink-muted italic">Aucun cours pointé cette semaine-là.</span>
+                    )}
+                  </div>
+                </div>
+                <button type="button" onClick={() => setSelectedRateWeek(null)} className="text-ink-muted text-[16px] leading-none px-1 shrink-0" aria-label="Fermer">×</button>
               </div>
             )}
           </>
