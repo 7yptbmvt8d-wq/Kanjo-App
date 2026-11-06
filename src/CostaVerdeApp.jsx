@@ -4269,6 +4269,17 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   const weeklyMax = Math.max(1, ...weeklySeries.map((w) => w.count));
 
   const live = datedSessions.length > 0;
+  // Semaine sélectionnée dans le graphe interactif (timestamp du lundi) —
+  // null = rien de sélectionné.
+  const [selectedWeek, setSelectedWeek] = useState(null);
+  const selectedWeekSessions = selectedWeek
+    ? datedSessions.filter((s) => startOfWeekMs(s._ms) === selectedWeek).sort((a, b) => a._ms - b._ms)
+    : [];
+  const firstNames = (ids) =>
+    (ids || [])
+      .map((id) => memberById.get(id))
+      .filter(Boolean)
+      .map((m) => m.firstName || `#${m.id}`);
 
   return (
     <>
@@ -4437,7 +4448,7 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
         ) : (
           <>
             <div className="text-[11px] text-ink-muted leading-snug mb-3">
-              Total des présences par semaine (lundi → dimanche) sur 8 semaines. Chaque barre = une semaine ; la date est celle du lundi.
+              Présences par semaine (lundi → dimanche). <strong className="text-ink-soft">Touche une barre</strong> pour voir le détail.
             </div>
             <div className="flex items-stretch gap-1.5 h-[88px]">
               {weeklySeries.map((w, i) => {
@@ -4445,24 +4456,85 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
                 const dte = new Date(w.when);
                 const label = `${dte.getDate()}/${dte.getMonth() + 1}`;
                 const isCurrent = i === weeklySeries.length - 1;
+                const isSel = selectedWeek === w.when;
                 return (
-                  <div key={w.when} className="flex-1 h-full flex flex-col items-center gap-1 min-w-0">
-                    <div className="text-[9px] font-semibold text-ink-soft tabular-nums leading-none h-[10px]">
+                  <button
+                    type="button"
+                    key={w.when}
+                    onClick={() => setSelectedWeek(isSel ? null : w.when)}
+                    className="flex-1 h-full flex flex-col items-center gap-1 min-w-0 cursor-pointer"
+                  >
+                    <div className={`text-[9px] font-semibold tabular-nums leading-none h-[10px] ${isSel ? "text-gold" : "text-ink-soft"}`}>
                       {w.count > 0 ? w.count : ""}
                     </div>
                     <div className="flex-1 w-full flex items-end">
                       <div
-                        className={`w-full rounded-t ${w.count > 0 ? "bg-pine" : "bg-[rgba(34,30,24,0.08)]"}`}
+                        className={`w-full rounded-t transition-colors ${
+                          w.count > 0 ? (isSel ? "bg-gold-300" : "bg-pine") : "bg-[rgba(34,30,24,0.08)]"
+                        } ${isSel ? "ring-2 ring-gold/60" : ""}`}
                         style={{ height: `${Math.max(pct, w.count > 0 ? 6 : 2)}%` }}
                       />
                     </div>
-                    <div className={`text-[9px] tabular-nums leading-none ${isCurrent ? "text-gold font-semibold" : "text-ink-muted"}`}>
+                    <div className={`text-[9px] tabular-nums leading-none ${isSel ? "text-gold font-semibold" : isCurrent ? "text-gold font-semibold" : "text-ink-muted"}`}>
                       {isCurrent ? "cette sem." : label}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
+
+            {/* Détail de la semaine sélectionnée */}
+            {selectedWeek && (
+              <div className="mt-3 pt-3 border-t border-[rgba(34,30,24,0.07)] animate-fade-in">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="text-[11px] font-bold tracking-section text-gold uppercase">
+                    Semaine du {new Date(selectedWeek).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} au {new Date(selectedWeek + 6 * 86400000).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedWeek(null)}
+                    className="text-ink-muted text-[16px] leading-none px-1"
+                    aria-label="Fermer"
+                  >
+                    ×
+                  </button>
+                </div>
+                {selectedWeekSessions.length === 0 ? (
+                  <div className="text-[12px] text-ink-muted italic py-1">
+                    Aucun cours pointé cette semaine-là.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {selectedWeekSessions.map((s) => {
+                      const d = new Date(s._ms);
+                      const jour = d.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" });
+                      const presents = firstNames(s.presentIds);
+                      const nbA = (s.absentIds || []).length;
+                      return (
+                        <div key={s.id} className="rounded-[10px] border border-[rgba(34,30,24,0.07)] bg-paper px-3 py-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-[12.5px] font-semibold text-ink leading-tight">
+                              {s.courseTitle}
+                            </div>
+                            <div className="text-[11px] tabular-nums shrink-0">
+                              <span className="text-pine font-semibold">{presents.length}</span>
+                              <span className="text-ink-muted"> prés.</span>
+                              {nbA > 0 && <span className="text-vermillion-500 font-semibold"> · {nbA} abs.</span>}
+                            </div>
+                          </div>
+                          <div className="text-[10.5px] text-ink-muted mt-0.5 capitalize">{jour}</div>
+                          {presents.length > 0 && (
+                            <div className="text-[11px] text-ink-soft mt-1 leading-snug">
+                              {presents.join(", ")}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
