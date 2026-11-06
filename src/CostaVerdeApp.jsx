@@ -4092,9 +4092,12 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   const now = Date.now();
   const ONE_DAY = 86400000;
   // Bornes de semaines CALENDAIRES (lundi) pour les KPIs "cette semaine" vs
-  // "semaine précédente" — cohérent avec l'histogramme par semaine.
+  // "semaine précédente" — cohérent avec l'histogramme par semaine. On passe
+  // par startOfWeekMs (pas une soustraction de 7×24 h) pour rester juste à
+  // travers les changements d'heure (une semaine qui enjambe le passage
+  // été→hiver fait 7×24 h + 1 h).
   const thisWeekStart = startOfWeekMs(now);
-  const lastWeekStart = thisWeekStart - 7 * ONE_DAY;
+  const lastWeekStart = startOfWeekMs(thisWeekStart - 3 * ONE_DAY);
   // Saison FFAB en cours (1er sept → 31 août) : tous les KPIs de présence y
   // sont scopés et repartent à zéro au 1er septembre.
   const season = currentSeasonRange(new Date(now));
@@ -4246,8 +4249,16 @@ function ProfDashboard({ members: allAdherents, sessions = [], stages = [], onOp
   const weeklySeries = (() => {
     if (datedSessions.length === 0) return [];
     const NB_WEEKS = 8;
-    const weekStarts = [];
-    for (let i = 0; i < NB_WEEKS; i++) weekStarts.push(thisWeekStart - (NB_WEEKS - 1 - i) * 7 * ONE_DAY);
+    // On recule semaine par semaine via startOfWeekMs (et non en soustrayant
+    // 7×24 h) pour que chaque casier reste le vrai lundi 00:00 local même à
+    // travers un changement d'heure — sinon les semaines d'avant la bascule
+    // ne tombent dans aucun casier et apparaissent vides.
+    const weekStarts = [thisWeekStart];
+    let cur = thisWeekStart;
+    for (let i = 1; i < NB_WEEKS; i++) {
+      cur = startOfWeekMs(cur - 3 * ONE_DAY);
+      weekStarts.unshift(cur);
+    }
     const counts = new Map(weekStarts.map((w) => [w, 0]));
     for (const s of datedSessions) {
       const ws = startOfWeekMs(s._ms);
